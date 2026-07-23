@@ -7,6 +7,7 @@ use App\Http\Controllers\Api\DokuNotificationController;
 use App\Http\Controllers\Auth\AuthenticatedSessionController;
 use App\Http\Controllers\Auth\RegisteredUserController;
 use App\Http\Controllers\BookingController;
+use App\Http\Controllers\Cron\ExpireBookingHoldsController;
 use App\Http\Controllers\HomeController;
 use App\Http\Controllers\PaymentController;
 use App\Http\Controllers\RoomController;
@@ -36,6 +37,9 @@ use Illuminate\Support\Facades\Route;
 */
 // Health probe that works on every host (including Vercel, where /api is reserved).
 Route::get('/health', fn () => response()->json(['status' => 'ok']));
+Route::get('/cron/expire-booking-holds', ExpireBookingHoldsController::class)
+    ->middleware('throttle:6,1')
+    ->name('cron.expire-booking-holds');
 
 Route::get('/', [HomeController::class, 'index'])->name('home');
 Route::get('/kamar', [RoomController::class, 'index'])->name('rooms.index');

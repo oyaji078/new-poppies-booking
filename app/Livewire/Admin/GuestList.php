@@ -34,9 +34,9 @@ class GuestList extends Component
             ])
             ->when($this->search, function ($q) {
                 $term = "%{$this->search}%";
-                $q->where(fn ($s) => $s->where('customer_name', 'like', $term)
-                    ->orWhere('customer_email', 'like', $term)
-                    ->orWhere('customer_phone', 'like', $term));
+                $q->where(fn ($s) => $s->whereLike('customer_name', $term, caseSensitive: false)
+                    ->orWhereLike('customer_email', $term, caseSensitive: false)
+                    ->orWhereLike('customer_phone', $term, caseSensitive: false));
             })
             ->groupBy('customer_email')
             ->orderByDesc('bookings_count')

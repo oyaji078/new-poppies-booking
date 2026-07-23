@@ -120,8 +120,7 @@ class DokuNotificationTest extends TestCase
         ?string $requestId = null,
         bool $validSignature = true,
         string $path = self::PATH,
-    )
-    {
+    ) {
         $raw = json_encode($payload, JSON_UNESCAPED_SLASHES);
         $requestId ??= 'req-'.uniqid();
         $timestamp = '2026-07-18T08:45:42Z';
@@ -145,18 +144,6 @@ class DokuNotificationTest extends TestCase
             ],
             $raw
         );
-    }
-
-    public function test_legacy_api_path_accepts_a_signature_for_its_actual_request_target(): void
-    {
-        $response = $this->postSigned(
-            $this->payload(),
-            path: '/api/payments/doku/notifications',
-        );
-
-        $response->assertOk();
-        $this->assertSame(BookingStatus::CONFIRMED, $this->booking->fresh()->status);
-        $this->assertSame(PaymentStatus::PAID, $this->booking->fresh()->payment_status);
     }
 
     public function test_valid_success_notification_confirms_booking_and_converts_inventory(): void

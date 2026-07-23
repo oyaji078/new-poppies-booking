@@ -109,7 +109,7 @@ class RoomManager extends Component
     {
         $rooms = Room::query()
             ->with('roomType')
-            ->when($this->search, fn ($q) => $q->where('room_number', 'like', "%{$this->search}%"))
+            ->when($this->search, fn ($q) => $q->whereLike('room_number', "%{$this->search}%", caseSensitive: false))
             ->orderBy('room_number')
             ->paginate(15);
 

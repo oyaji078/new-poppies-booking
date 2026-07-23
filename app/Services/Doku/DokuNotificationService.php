@@ -16,6 +16,7 @@ use Illuminate\Database\QueryException;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Mail;
+use Throwable;
 
 /**
  * Processes a verified DOKU notification.
@@ -48,6 +49,29 @@ class DokuNotificationService
         $attempt = $invoiceNumber
             ? PaymentAttempt::query()->where('invoice_number', $invoiceNumber)->first()
             : null;
+        $idempotencyKey = $requestId ?: 'payload:'.substr($payloadHash, 0, 40);
+
+        // Avoid deliberately tripping a unique constraint for ordinary retries.
+        // PostgreSQL marks the surrounding transaction as aborted after a
+        // constraint error, unlike MySQL. The database constraint below remains
+        // the final race-condition guard for truly concurrent deliveries.
+        $alreadyReceived = PaymentEvent::query()
+            ->where('provider', 'doku')
+            ->where(function ($query) use ($idempotencyKey, $attempt, $payloadHash): void {
+                $query->where('provider_request_id', $idempotencyKey);
+
+                if ($attempt) {
+                    $query->orWhere(function ($duplicate) use ($attempt, $payloadHash): void {
+                        $duplicate->where('payment_attempt_id', $attempt->id)
+                            ->where('payload_hash', $payloadHash);
+                    });
+                }
+            })
+            ->exists();
+
+        if ($alreadyReceived) {
+            return 'duplicate';
+        }
 
         // --- Idempotency gate -------------------------------------------------
         // UNIQUE(provider, provider_request_id) only bites on non-NULL values —
@@ -58,7 +82,7 @@ class DokuNotificationService
             $event = PaymentEvent::create([
                 'provider' => 'doku',
                 'payment_attempt_id' => $attempt?->id,
-                'provider_request_id' => $requestId ?: 'payload:'.substr($payloadHash, 0, 40),
+                'provider_request_id' => $idempotencyKey,
                 'event_type' => $this->mapper->eventType($payload),
                 'payload_hash' => $payloadHash,
                 'signature_valid' => $signatureValid,
@@ -211,8 +235,18 @@ class DokuNotificationService
             'late_payment_recovery' => $outcome === 'confirmed_late',
         ]);
 
-        // Queued so a slow mail server can never delay the webhook response.
-        Mail::to($booking->customer_email)->queue(new BookingConfirmedMail($booking));
+        // Production uses the sync queue on Vercel. A mail transport failure
+        // must never turn a successfully committed payment into a 500 webhook,
+        // otherwise DOKU keeps retrying an already-confirmed transaction.
+        try {
+            Mail::to($booking->customer_email)->queue(new BookingConfirmedMail($booking));
+        } catch (Throwable $exception) {
+            Log::error('Booking confirmation email failed after payment confirmation', [
+                'booking' => $booking->code,
+                'exception' => $exception::class,
+                'message' => $exception->getMessage(),
+            ]);
+        }
 
         return 'processed';
     }

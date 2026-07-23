@@ -9,6 +9,12 @@
       "maxDuration": 60
     }
   },
+  "crons": [
+    {
+      "path": "/cron/expire-booking-holds",
+      "schedule": "0 0 * * *"
+    }
+  ],
   "routes": [
     {
       "src": "/build/(.*)",

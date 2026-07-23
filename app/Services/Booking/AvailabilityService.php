@@ -14,6 +14,10 @@ use Illuminate\Support\Collection;
  */
 class AvailabilityService
 {
+    public function __construct(
+        private readonly BookingExpirationService $expiration,
+    ) {}
+
     /**
      * Maximum number of rooms of this type bookable for the entire stay.
      */
@@ -44,6 +48,10 @@ class AvailabilityService
      */
     public function search(StayPeriod $stay, int $adults, int $children, int $rooms): Collection
     {
+        // Vercel has no long-running scheduler. Sweep stale holds on real user
+        // traffic so expired reservations cannot keep rooms locked forever.
+        $this->expiration->expireDueHolds();
+
         $guestsPerRoom = (int) ceil(($adults + $children) / max(1, $rooms));
 
         return RoomType::query()

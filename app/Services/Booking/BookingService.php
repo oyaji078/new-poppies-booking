@@ -29,6 +29,7 @@ class BookingService
         private readonly BookingCodeGenerator $codes,
         private readonly SettingService $settings,
         private readonly AuditLogger $audit,
+        private readonly BookingExpirationService $expiration,
     ) {}
 
     /**
@@ -74,6 +75,10 @@ class BookingService
         int $children,
         array $details,
     ): Booking {
+        // Serverless deployments do not have a resident scheduler. This keeps
+        // capacity correct even when the external cron is delayed or absent.
+        $this->expiration->expireDueHolds();
+
         $this->assertStayIsBookable($roomType, $stay, $rooms, $adults, $children);
 
         $holdMinutes = $this->settings->integer('booking_hold_minutes', 30);

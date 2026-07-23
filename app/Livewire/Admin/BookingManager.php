@@ -60,9 +60,9 @@ class BookingManager extends Component
             ->with(['items'])
             ->when($this->search, function ($q) {
                 $term = "%{$this->search}%";
-                $q->where(fn ($sub) => $sub->where('code', 'like', $term)
-                    ->orWhere('customer_name', 'like', $term)
-                    ->orWhere('customer_email', 'like', $term));
+                $q->where(fn ($sub) => $sub->whereLike('code', $term, caseSensitive: false)
+                    ->orWhereLike('customer_name', $term, caseSensitive: false)
+                    ->orWhereLike('customer_email', $term, caseSensitive: false));
             })
             ->when($this->status, fn ($q) => $q->where('status', $this->status))
             ->when($this->paymentStatus, fn ($q) => $q->where('payment_status', $this->paymentStatus))

@@ -121,15 +121,33 @@ class ConcurrentBookingTest extends TestCase
 
         // Children must talk to the TEST database, not the app one. Process env
         // wins over .env because Laravel loads .env immutably.
+        $connection = DB::getDefaultConnection();
+        $config = config('database.connections.'.$connection);
+
         $env = [
             'APP_ENV' => 'testing',
-            'DB_CONNECTION' => 'mysql',
-            'DB_HOST' => config('database.connections.mysql.host'),
-            'DB_PORT' => (string) config('database.connections.mysql.port'),
-            'DB_DATABASE' => config('database.connections.mysql.database'),
-            'DB_USERNAME' => (string) config('database.connections.mysql.username'),
-            'DB_PASSWORD' => (string) config('database.connections.mysql.password'),
+            'DB_CONNECTION' => $connection,
         ];
+
+        if ($connection === 'supabase') {
+            $env += [
+                'SUPABASE_DB_HOST' => (string) $config['host'],
+                'SUPABASE_DB_PORT' => (string) $config['port'],
+                'SUPABASE_DB_DATABASE' => (string) $config['database'],
+                'SUPABASE_DB_USERNAME' => (string) $config['username'],
+                'SUPABASE_DB_PASSWORD' => (string) $config['password'],
+                'SUPABASE_DB_SCHEMA' => (string) $config['search_path'],
+                'SUPABASE_DB_SSLMODE' => (string) $config['sslmode'],
+            ];
+        } else {
+            $env += [
+                'DB_HOST' => (string) $config['host'],
+                'DB_PORT' => (string) $config['port'],
+                'DB_DATABASE' => (string) $config['database'],
+                'DB_USERNAME' => (string) $config['username'],
+                'DB_PASSWORD' => (string) $config['password'],
+            ];
+        }
 
         $results = Process::pool(function (Pool $pool) use ($attempts, $roomsEach, $startAt, $env) {
             for ($i = 0; $i < $attempts; $i++) {

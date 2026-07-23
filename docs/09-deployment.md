@@ -109,9 +109,9 @@ namun ada beberapa hal khas serverless:
 |-----|----------------------|
 | **Prefiks `/api` dipesan Vercel** | Rute `/api/*` Laravel tidak pernah sampai ke router. Karena itu webhook DOKU dipindah ke **`/webhook/doku/notifications`** (rute web), dan health ke `/health`. |
 | **`${APP_URL}` tidak diekspansi** | Di dashboard Vercel, isi URL penuh — `DOKU_NOTIFICATION_URL=https://<app>.vercel.app/webhook/doku/notifications`, `DOKU_CALLBACK_URL=https://<app>.vercel.app/payment/callback`, `APP_URL=https://<app>.vercel.app`. |
-| **Tidak ada queue worker** | Email konfirmasi (antre) tidak terkirim. Set `QUEUE_CONNECTION=sync` agar email dikirim inline saat webhook diproses, atau pakai queue eksternal. |
-| **Tidak ada scheduler** | Hold kedaluwarsa tidak dilepas otomatis. Pakai **Vercel Cron** yang memanggil endpoint penjalan `bookings:expire-holds`, atau cron eksternal. |
-| **Filesystem `/tmp` sementara** | Jangan memakai sesi/cache berbasis file. Deployment ini memakai `SESSION_DRIVER=cookie` agar sesi terenkripsi tidak menambah round-trip ke Supabase; cache persisten dapat memakai database eksternal. Log `/tmp` hilang tiap invocation. |
+| **Tidak ada queue worker** | Deployment memakai `QUEUE_CONNECTION=sync`. Kegagalan email dicatat tetapi tidak menggagalkan konfirmasi pembayaran/webhook. SMTP tetap harus dikonfigurasi agar email benar-benar terkirim. |
+| **Tidak ada scheduler tetap** | Vercel Cron harian memanggil `/cron/expire-booking-holds` dengan `CRON_SECRET`; pencarian dan pembuatan booking juga menyapu hold kedaluwarsa agar inventori tetap benar di antara jadwal cron. |
+| **Filesystem `/tmp` sementara** | Deployment memakai `SESSION_DRIVER=cookie`; foto kamar disimpan di bucket publik Supabase Storage melalui `SUPABASE_URL`, `SUPABASE_SERVICE_ROLE_KEY`, dan `SUPABASE_STORAGE_BUCKET`. |
 | **`APP_DEBUG=false`** | Wajib di produksi. |
 
 Setelah mengubah rute/env, **redeploy** agar rute baru aktif, lalu daftarkan
