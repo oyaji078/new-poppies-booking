@@ -1,9 +1,7 @@
 @props(['booking'])
 
 @php
-    // Only poll while the status can still change on its own — i.e. while a DOKU
-    // notification could arrive. Settled states (confirmed, expired, cancelled,
-    // checked in/out, no-show) never need it.
+    // Poll only while a verified DOKU notification can still change the state.
     $transient = in_array($booking->status->value, ['held', 'pending_payment', 'payment_review'], true);
     $current = $booking->status->value.'|'.$booking->payment_status->value;
 @endphp
@@ -11,25 +9,55 @@
 @if ($transient)
     <div
         data-payment-status-poller="{{ $booking->code }}"
-        x-data="{
-            current: @js($current),
-            url: @js(route('booking.status', $booking->code)),
-            tries: 0,
-            check() {
-                // Give up after ~10 minutes so an abandoned tab stops polling.
-                if (this.tries++ > 150) return;
-                fetch(this.url, { headers: { 'Accept': 'application/json' } })
-                    .then(r => (r.ok ? r.json() : null))
-                    .then(d => {
-                        if (d && (d.status + '|' + d.payment_status) !== this.current) {
-                            // The server has the new state — re-render it authoritatively.
-                            window.location.reload();
-                        }
-                    })
-                    .catch(() => {});
-            },
-        }"
-        x-init="setInterval(() => check(), 4000)"
-        wire:ignore
+        data-current-status="{{ $current }}"
+        data-status-url="{{ route('booking.status', $booking->code) }}"
     ></div>
+    <script>
+        (() => {
+            const node = document.querySelector(
+                '[data-payment-status-poller="{{ $booking->code }}"]'
+            );
+
+            if (!node || node.dataset.pollingStarted === 'true') return;
+            node.dataset.pollingStarted = 'true';
+
+            let attempts = 0;
+            let stopped = false;
+
+            const check = async () => {
+                // Stop after roughly ten minutes so abandoned tabs do not poll forever.
+                if (stopped || attempts++ >= 200) return;
+
+                try {
+                    const separator = node.dataset.statusUrl.includes('?') ? '&' : '?';
+                    const response = await fetch(
+                        node.dataset.statusUrl + separator + '_poll=' + Date.now(),
+                        {
+                            headers: { 'Accept': 'application/json' },
+                            credentials: 'same-origin',
+                            cache: 'no-store',
+                        }
+                    );
+
+                    if (response.ok) {
+                        const data = await response.json();
+                        const latest = data.status + '|' + data.payment_status;
+
+                        if (latest !== node.dataset.currentStatus) {
+                            stopped = true;
+                            window.location.reload();
+                            return;
+                        }
+                    }
+                } catch (_) {
+                    // Retry temporary network failures on the next tick.
+                }
+
+                if (!stopped) window.setTimeout(check, 3000);
+            };
+
+            // Check immediately: the webhook may finish during DOKU's redirect.
+            check();
+        })();
+    </script>
 @endif
