@@ -1,0 +1,85 @@
+@import 'tailwindcss';
+
+@source '../../vendor/laravel/framework/src/Illuminate/Pagination/resources/views/*.blade.php';
+@source '../../storage/framework/views/*.php';
+@source '../**/*.blade.php';
+@source '../**/*.js';
+/* Status badge classes are declared in PHP enums (App\Enums\*), so scan app/ too. */
+@source '../../app/**/*.php';
+
+/*
+| Design system — New Poppies Senggigi
+| Tropical-luxury palette: deep ocean teal (brand) + warm sand/gold (accent).
+| Fonts: Instrument Sans (bundled default) for body, serif stack for display.
+*/
+@theme {
+    --font-sans: 'Instrument Sans', ui-sans-serif, system-ui, sans-serif, 'Apple Color Emoji', 'Segoe UI Emoji',
+        'Segoe UI Symbol', 'Noto Color Emoji';
+    --font-display: 'Fraunces', 'Playfair Display', Georgia, 'Times New Roman', serif;
+
+    /* Brand — ocean teal */
+    --color-brand-50: #f0fdfa;
+    --color-brand-100: #ccfbf1;
+    --color-brand-200: #99f6e4;
+    --color-brand-300: #5eead4;
+    --color-brand-400: #2dd4bf;
+    --color-brand-500: #14b8a6;
+    --color-brand-600: #0d9488;
+    --color-brand-700: #0f766e;
+    --color-brand-800: #115e59;
+    --color-brand-900: #134e4a;
+    --color-brand-950: #042f2e;
+
+    /* Accent — warm sand/gold */
+    --color-sand-50: #fbf7ef;
+    --color-sand-100: #f4e9d3;
+    --color-sand-200: #e9d3a8;
+    --color-sand-300: #ddb974;
+    --color-sand-400: #d3a251;
+    --color-sand-500: #c88a38;
+    --color-sand-600: #b0702d;
+    --color-sand-700: #925628;
+    --color-sand-800: #784626;
+    --color-sand-900: #653b23;
+}
+
+[x-cloak] { display: none !important; }
+
+@layer components {
+    .btn,
+    .btn-primary,
+    .btn-accent,
+    .btn-outline,
+    .btn-ghost {
+        @apply inline-flex items-center justify-center gap-2 rounded-lg px-5 py-2.5 text-sm font-semibold transition
+            focus:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 disabled:opacity-60 disabled:pointer-events-none;
+    }
+    .btn-primary {
+        @apply bg-brand-600 text-white shadow-sm hover:bg-brand-700 focus-visible:ring-brand-500;
+    }
+    .btn-accent {
+        @apply bg-sand-500 text-white shadow-sm hover:bg-sand-600 focus-visible:ring-sand-400;
+    }
+    .btn-outline {
+        @apply border border-slate-300 bg-white text-slate-700 hover:bg-slate-50 focus-visible:ring-brand-500;
+    }
+    .btn-ghost {
+        @apply text-slate-600 hover:bg-slate-100;
+    }
+    .input {
+        @apply w-full rounded-lg border border-slate-300 bg-white px-3.5 py-2.5 text-sm text-slate-900 shadow-sm
+            placeholder:text-slate-400 focus:border-brand-500 focus:ring-2 focus:ring-brand-500/30 focus:outline-none;
+    }
+    .label {
+        @apply mb-1.5 block text-sm font-medium text-slate-700;
+    }
+    .card {
+        @apply rounded-2xl border border-slate-200 bg-white shadow-sm;
+    }
+    .badge {
+        @apply inline-flex items-center gap-1 rounded-full px-2.5 py-0.5 text-xs font-medium;
+    }
+    .field-error {
+        @apply mt-1 text-sm text-rose-600;
+    }
+}
