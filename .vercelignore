@@ -1,0 +1,17 @@
+.git
+.env
+.env.*
+!.env.example
+.vercel
+node_modules
+vendor
+tests
+docs
+_scaffold
+storage/logs/*
+storage/framework/cache/*
+storage/framework/sessions/*
+storage/framework/views/*
+database/database.sqlite
+.phpunit.result.cache
+*.log
