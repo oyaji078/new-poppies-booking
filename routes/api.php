@@ -1,5 +1,6 @@
 <?php
 
+use App\Http\Controllers\Api\DokuNotificationController;
 use Illuminate\Support\Facades\Route;
 
 /*
@@ -7,12 +8,14 @@ use Illuminate\Support\Facades\Route;
 | API Routes
 |--------------------------------------------------------------------------
 |
-| NOTE: on serverless hosts such as Vercel the /api/* path is reserved by the
-| platform's own function routing and never reaches Laravel, so nothing critical
-| may live here. The DOKU notification webhook therefore lives in routes/web.php
-| at /webhook/doku/notifications, and the health check is mirrored there at
-| /health so it works everywhere.
+| The legacy DOKU endpoint remains active because existing DOKU dashboard
+| registrations may continue posting to it. The primary endpoint is the
+| /webhook route in routes/web.php.
 |
 */
 
 Route::get('/health', fn () => response()->json(['status' => 'ok']));
+
+Route::post('/payments/doku/notifications', DokuNotificationController::class)
+    ->middleware('throttle:120,1')
+    ->name('payments.doku.notifications.legacy');

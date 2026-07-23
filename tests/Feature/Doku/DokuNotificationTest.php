@@ -115,7 +115,12 @@ class DokuNotificationTest extends TestCase
     /**
      * Post a notification signed exactly the way DOKU signs it.
      */
-    private function postSigned(array $payload, ?string $requestId = null, bool $validSignature = true)
+    private function postSigned(
+        array $payload,
+        ?string $requestId = null,
+        bool $validSignature = true,
+        string $path = self::PATH,
+    )
     {
         $raw = json_encode($payload, JSON_UNESCAPED_SLASHES);
         $requestId ??= 'req-'.uniqid();
@@ -124,12 +129,12 @@ class DokuNotificationTest extends TestCase
         $signatures = new DokuSignatureService(self::CLIENT_ID, self::SECRET);
         $digest = $signatures->digest($raw);
         $signature = $validSignature
-            ? $signatures->sign($requestId, $timestamp, self::PATH, $digest)
+            ? $signatures->sign($requestId, $timestamp, $path, $digest)
             : 'HMACSHA256=forged-signature-value';
 
         return $this->call(
             'POST',
-            self::PATH,
+            $path,
             [], [], [],
             [
                 'HTTP_Client-Id' => self::CLIENT_ID,
@@ -140,6 +145,18 @@ class DokuNotificationTest extends TestCase
             ],
             $raw
         );
+    }
+
+    public function test_legacy_api_path_accepts_a_signature_for_its_actual_request_target(): void
+    {
+        $response = $this->postSigned(
+            $this->payload(),
+            path: '/api/payments/doku/notifications',
+        );
+
+        $response->assertOk();
+        $this->assertSame(BookingStatus::CONFIRMED, $this->booking->fresh()->status);
+        $this->assertSame(PaymentStatus::PAID, $this->booking->fresh()->payment_status);
     }
 
     public function test_valid_success_notification_confirms_booking_and_converts_inventory(): void

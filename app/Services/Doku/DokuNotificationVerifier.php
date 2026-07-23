@@ -35,7 +35,7 @@ class DokuNotificationVerifier
 
         $rawBody = $request->getContent();
         $digest = $this->signatures->digest($rawBody);
-        $target = $this->notificationTarget();
+        $target = $this->notificationTarget($request);
 
         $valid = $this->signatures->verify($signature, $requestId, $timestamp, $target, $digest, $clientId);
 
@@ -50,8 +50,14 @@ class DokuNotificationVerifier
      * Request-Target for notifications is the PATH of our configured
      * notification URL, e.g. /webhook/doku/notifications.
      */
-    public function notificationTarget(): string
+    public function notificationTarget(?Request $request = null): string
     {
+        // DOKU signs the exact path it called. Supporting the legacy endpoint is
+        // necessary while a merchant dashboard still has the previous URL.
+        if ($request !== null) {
+            return '/'.ltrim($request->path(), '/');
+        }
+
         $configured = (string) config('doku.notification_url');
 
         if ($configured !== '') {
