@@ -119,7 +119,7 @@ class BookingInventoryService
         foreach ($lockedRows as $row) {
             RoomTypeInventory::query()->whereKey($row->getKey())->update([
                 // GREATEST(...) keeps values clamped at zero even if state drifted.
-                'held_inventory' => new Expression('GREATEST(CAST(held_inventory AS SIGNED) - '.(int) $rooms.', 0)'),
+                'held_inventory' => new Expression('GREATEST(held_inventory - '.(int) $rooms.', 0)'),
                 'confirmed_inventory' => new Expression('confirmed_inventory + '.(int) $rooms),
                 'updated_at' => now(),
             ]);
@@ -156,7 +156,7 @@ class BookingInventoryService
         foreach ($lockedRows as $row) {
             $sql = $delta > 0
                 ? "{$column} + ".$delta
-                : "GREATEST(CAST({$column} AS SIGNED) - ".abs($delta).', 0)';
+                : "GREATEST({$column} - ".abs($delta).', 0)';
 
             RoomTypeInventory::query()->whereKey($row->getKey())->update([
                 $column => new Expression($sql),

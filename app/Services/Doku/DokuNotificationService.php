@@ -278,7 +278,12 @@ class DokuNotificationService
     private function isUniqueViolation(QueryException $e): bool
     {
         // MySQL/MariaDB duplicate entry
+        // PostgreSQL reports SQLSTATE 23505 / "duplicate key value".
+        $message = strtolower($e->getMessage());
+
         return (string) ($e->errorInfo[1] ?? '') === '1062'
-            || str_contains(strtolower($e->getMessage()), 'duplicate entry');
+            || (string) ($e->errorInfo[0] ?? '') === '23505'
+            || str_contains($message, 'duplicate entry')
+            || str_contains($message, 'duplicate key value');
     }
 }
