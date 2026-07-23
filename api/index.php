@@ -14,6 +14,7 @@ register_shutdown_function(function (): void {
 require __DIR__.'/../vendor/autoload.php';
 
 $storagePath = '/tmp/laravel-storage';
+$bootstrapCachePath = '/tmp/laravel-bootstrap-cache';
 
 foreach ([
     $storagePath.'/app',
@@ -21,10 +22,23 @@ foreach ([
     $storagePath.'/framework/sessions',
     $storagePath.'/framework/views',
     $storagePath.'/logs',
+    $bootstrapCachePath,
 ] as $directory) {
     if (! is_dir($directory)) {
         mkdir($directory, 0775, true);
     }
+}
+
+foreach ([
+    'APP_SERVICES_CACHE' => $bootstrapCachePath.'/services.php',
+    'APP_PACKAGES_CACHE' => $bootstrapCachePath.'/packages.php',
+    'APP_CONFIG_CACHE' => $bootstrapCachePath.'/config.php',
+    'APP_ROUTES_CACHE' => $bootstrapCachePath.'/routes.php',
+    'APP_EVENTS_CACHE' => $bootstrapCachePath.'/events.php',
+] as $key => $path) {
+    putenv("{$key}={$path}");
+    $_ENV[$key] = $path;
+    $_SERVER[$key] = $path;
 }
 
 try {
