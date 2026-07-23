@@ -1,8 +1,11 @@
 <?php
 
+use Illuminate\Foundation\Application;
 use Illuminate\Http\Request;
 
 define('LARAVEL_START', microtime(true));
+
+require __DIR__.'/../vendor/autoload.php';
 
 $storagePath = '/tmp/laravel-storage';
 
@@ -18,7 +21,7 @@ foreach ([
     }
 }
 
-/** @var \Illuminate\Foundation\Application $app */
+/** @var Application $app */
 $app = require __DIR__.'/../bootstrap/app.php';
 $app->useStoragePath($storagePath);
 
