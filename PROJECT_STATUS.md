@@ -249,6 +249,20 @@ as `user.managed`. Covered by `UserManagerTest` (9) and `InactiveUserTest` (3).
 - **Refund automation = compute + record, manual payout** (owner, 2026-07-24).
 - **Cancellation fee = percentage, default 50%, configurable** (owner, 2026-07-24).
 
+## 6e. Public UI/UX polish (2026-07-24)
+
+- **Hero overlap fixed.** The homepage "advantages" cards, lifted over the hero
+  edge with a negative margin, were being painted *behind* the hero (icons
+  clipped). Added `relative z-10` so the full cards sit above it, with a soft
+  shadow.
+- **Loading feedback added** (`resources/js/loading.js`, loaded globally via
+  `app.js`). A top teal progress bar starts on any same-origin link click or
+  full-page form submit, and the clicked submit button turns into a spinner
+  ("Menyiapkan pembayaran…", "Memproses…") — so a slow request such as creating
+  a DOKU payment never looks unresponsive. Livewire's own `wire:loading` states
+  cover the search/checkout components (extended to `goToReview`, `applyPromo`).
+  Opt out with `data-no-loading`; customise the text with `data-loading-text`.
+
 ## 7. Other known limitations
 
 | Item | Note |

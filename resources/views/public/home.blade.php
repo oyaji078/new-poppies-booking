@@ -20,16 +20,17 @@
         </div>
     </section>
 
-    {{-- Advantages --}}
-    <section class="mx-auto -mt-12 max-w-6xl px-4">
+    {{-- Advantages — lifted over the hero edge; z-10 keeps the cards (and their
+         icons) above the hero background instead of being clipped behind it. --}}
+    <section class="relative z-10 mx-auto -mt-14 max-w-6xl px-4">
         <div class="grid gap-4 sm:grid-cols-3">
             @foreach ([
                 ['Lokasi Strategis', 'Langkah singkat ke Pantai Senggigi, restoran, dan pusat oleh-oleh.'],
                 ['Pembayaran Aman', 'Transaksi online terverifikasi melalui gateway pembayaran DOKU.'],
                 ['Ketersediaan Real-time', 'Kalender kamar akurat — bebas dari risiko pemesanan ganda.'],
             ] as [$title, $desc])
-                <div class="card p-6">
-                    <div class="grid h-11 w-11 place-items-center rounded-xl bg-brand-50 text-brand-700">✦</div>
+                <div class="card p-6 shadow-lg shadow-brand-950/5">
+                    <div class="grid h-11 w-11 place-items-center rounded-xl bg-brand-50 text-lg text-brand-700">✦</div>
                     <h3 class="mt-4 font-display text-lg font-semibold text-slate-900">{{ $title }}</h3>
                     <p class="mt-1.5 text-sm leading-relaxed text-slate-600">{{ $desc }}</p>
                 </div>

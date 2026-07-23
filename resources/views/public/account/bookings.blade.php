@@ -60,7 +60,7 @@
                             @if ($booking->is_payable && Route::has('payment.start'))
                                 <form method="POST" action="{{ route('payment.start', $booking->code) }}">
                                     @csrf
-                                    <button type="submit" class="btn-primary">Bayar Sekarang</button>
+                                    <button type="submit" class="btn-primary" data-loading-text="Menyiapkan…">Bayar Sekarang</button>
                                 </form>
                             @endif
                         </div>

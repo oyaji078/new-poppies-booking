@@ -96,7 +96,10 @@
                         @error('terms') <p class="field-error">{{ $message }}</p> @enderror
 
                         <div class="mt-6 flex justify-end">
-                            <button wire:click="goToReview" class="btn-primary">Lanjut ke Tinjauan</button>
+                            <button wire:click="goToReview" class="btn-primary" wire:loading.attr="disabled" wire:target="goToReview">
+                                <span wire:loading.remove wire:target="goToReview">Lanjut ke Tinjauan</span>
+                                <span wire:loading wire:target="goToReview" class="inline-flex items-center gap-2"><span class="np-spin"></span>Memeriksa…</span>
+                            </button>
                         </div>
                     </div>
                 @else
@@ -166,7 +169,10 @@
                         <label class="label">Kode Promo</label>
                         <div class="flex gap-2">
                             <input type="text" wire:model="promo_code" class="input" placeholder="Masukkan kode">
-                            <button wire:click="applyPromo" class="btn-outline shrink-0 text-sm">Pakai</button>
+                            <button wire:click="applyPromo" class="btn-outline shrink-0 text-sm" wire:loading.attr="disabled" wire:target="applyPromo">
+                                <span wire:loading.remove wire:target="applyPromo">Pakai</span>
+                                <span wire:loading wire:target="applyPromo">…</span>
+                            </button>
                         </div>
                         @if ($promoMessage)
                             <p class="mt-1 text-xs {{ $promoApplied ? 'text-emerald-600' : 'text-rose-600' }}">{{ $promoMessage }}</p>

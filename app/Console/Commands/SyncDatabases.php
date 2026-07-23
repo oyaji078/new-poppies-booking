@@ -126,6 +126,8 @@ class SyncDatabases extends Command
             $this->syncTable($source, $destination, $table, $chunkSize);
         }
 
+        $this->synchronizePostgresSequences($destination, $tables);
+
         $this->components->info("Synchronization complete: {$sourceName} → {$destinationName}.");
 
         return self::SUCCESS;
@@ -157,5 +159,44 @@ class SyncDatabases extends Command
 
             $this->line("  {$table}: {$copied} rows");
         });
+    }
+
+    /**
+     * Upserting explicit MySQL IDs does not advance PostgreSQL sequences.
+     * Without this, the next production insert can reuse an existing ID.
+     *
+     * @param  list<string>  $tables
+     */
+    private function synchronizePostgresSequences(Connection $destination, array $tables): void
+    {
+        if ($destination->getDriverName() !== 'pgsql') {
+            return;
+        }
+
+        foreach ($tables as $table) {
+            $columns = Schema::connection($destination->getName())->getColumnListing($table);
+
+            if (! in_array('id', $columns, true)) {
+                continue;
+            }
+
+            $sequence = $destination->selectOne(
+                'select pg_get_serial_sequence(?, ?) as name',
+                [$table, 'id'],
+            )?->name;
+
+            if (! $sequence) {
+                continue;
+            }
+
+            $maximumId = (int) $destination->table($table)->max('id');
+
+            if ($maximumId > 0) {
+                $destination->statement(
+                    'select setval(?::regclass, ?, true)',
+                    [$sequence, $maximumId],
+                );
+            }
+        }
     }
 }
