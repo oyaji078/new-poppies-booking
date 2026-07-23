@@ -5,6 +5,7 @@
 .vercel
 node_modules
 vendor
+bootstrap/cache/*.php
 tests
 docs
 _scaffold

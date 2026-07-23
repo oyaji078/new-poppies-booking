@@ -113,6 +113,7 @@ class SyncDatabases extends Command
         foreach ($tables as $table) {
             if (! Schema::connection($sourceName)->hasTable($table)) {
                 $this->components->warn("Skipping {$table}: source table does not exist.");
+
                 continue;
             }
 

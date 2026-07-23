@@ -14,7 +14,7 @@ php artisan test --filter=ConcurrentBookingTest
 ## 8.1 Hasil Terakhir
 
 ```
-Tests:    229 passed (563 assertions)
+Tests:    231 passed (575 assertions)
 Pint:     passed
 Build:    npm run build → success
 ```

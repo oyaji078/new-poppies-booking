@@ -14,7 +14,7 @@ _Last updated: 2026-07-24 — all 10 phases (0–9) executed; DOKU config audit 
 | Frontend | Blade + Tailwind CSS v4 (Vite 7) + Alpine (via Livewire) |
 | Timezone | Asia/Makassar (WITA) |
 | UI language | Indonesian · Code/DB language: English |
-| **Tests** | **229 passed (563 assertions)** |
+| **Tests** | **231 passed (575 assertions)** |
 | **Lint** | **Pint: passed** |
 | **Build** | **`npm run build`: success** |
 
@@ -85,7 +85,7 @@ labelled "Manual" in the UI.
 | Authorization works | ✅ | `SecurityGuardsTest` |
 | Migrations work | ✅ | All migrations run clean on MariaDB |
 | Seeders work | ✅ | Settings, admin, rooms, inventory (120 days), FAQs, pages |
-| Tests pass | ✅ | 229 passed |
+| Tests pass | ✅ | 231 passed |
 | Frontend build passes | ✅ | Vite build success |
 | No broken core route | ✅ | Smoke tests over public + admin routes |
 | No dead buttons | ✅ | Sidebar links guarded by `Route::has()`; all CTAs wired |
@@ -202,11 +202,23 @@ Covered by `DokuEnvironmentSwitchTest` (9 tests).
 | **Payment method picker** | Super admin chooses which DOKU methods appear (QRIS, VA banks, e-wallet, cards, paylater) from `/admin/doku`; stored in settings, applied at request time, unknown values dropped. QRIS itself must be activated on the DOKU account. `DokuEnvironmentSwitchTest`. |
 | **Realtime status + callback token** | The "waiting" pages poll `booking.status` and refresh on change; a signed callback token re-authorises a payer returning from DOKU when the session cookie did not survive the cross-host redirect. `PaymentStatusPollTest`, `PaymentCallbackTokenTest`. |
 
-**Admin vs super-admin.** Super-admin-only surfaces: DOKU mode + payment methods
-(`/admin/doku`), staff/user management (`/admin/pengguna`), and **system settings**
-(`/admin/pengaturan`) — all added 2026-07-24. Role granting is also available via
-CLI (`user:make-superadmin`). The super-admin/admin split is now complete for
-every sensitive surface.
+**Admin vs super-admin — disjoint roles (2026-07-24).** The two sidebars are now
+deliberately separate: **Admin** owns daily operations (reservations, front desk,
+rooms, inventory, promotions, reports, …); **Super Admin** owns system/money
+configuration only (Pengaturan Sistem, Mode Pembayaran DOKU, Kelola Pengguna) plus
+the shared Dashboard. Super Admin no longer carries the operational menus. The
+config routes are super-admin-gated; role granting is also available via CLI
+(`user:make-superadmin`). `MenuSeparationTest`, plus the per-page guard tests.
+`AdminUserSeeder` now seeds both a super admin and an admin so a fresh install can
+do both immediately.
+
+Demo accounts (`DemoUsersSeeder`, password `password`, **dev only**):
+`superadmin@`, `admin@`, `pelanggan@newpoppiessenggigi.test`.
+
+**Payment methods.** `DOKU_PAYMENT_METHODS=QRIS` — a single method sends the guest
+straight to a full-page QR (largest QRIS presentation; DOKU's hosted page cannot be
+restyled by us). Empty = show every active method; a comma list curates them.
+Changeable by a super admin at `/admin/doku`.
 
 **System settings** (`SettingsManager`, `/admin/pengaturan`): super-admin-only
 editor for hotel identity, tax/service percentages, hold duration, max nights, and

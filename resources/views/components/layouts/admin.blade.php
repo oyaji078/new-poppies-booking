@@ -28,8 +28,10 @@
             </div>
             <nav class="flex flex-col gap-1 overflow-y-auto p-3 text-sm">
                 @php
-                    $nav = [
-                        ['Dashboard', 'admin.dashboard'],
+                    $isSuper = auth()->user()?->isSuperAdmin();
+
+                    // Day-to-day operations — the Admin's domain.
+                    $operational = [
                         ['Reservasi', 'admin.bookings.index'],
                         ['Pembayaran', 'admin.payments.index'],
                         ['Peninjauan Pembayaran', 'admin.payments.review'],
@@ -44,29 +46,44 @@
                         ['Laporan', 'admin.reports.index'],
                         ['FAQ / Chatbot', 'admin.faqs.index'],
                         ['Konten Website', 'admin.pages.index'],
-                        ['Pengaturan', 'admin.settings.edit'],
-                        ['Mode Pembayaran DOKU', 'admin.doku.environment'],
-                        ['Kelola Pengguna', 'admin.users.index'],
                         ['Audit Log', 'admin.audit.index'],
                     ];
-                    $superAdminOnly = ['admin.doku.environment', 'admin.users.index', 'admin.settings.edit'];
+                    // System & money configuration — the Super Admin's domain.
+                    $configuration = [
+                        ['Pengaturan Sistem', 'admin.settings.edit'],
+                        ['Mode Pembayaran DOKU', 'admin.doku.environment'],
+                        ['Kelola Pengguna', 'admin.users.index'],
+                    ];
+                    $navLink = function (string $label, string $routeName) {
+                        if (! Route::has($routeName)) {
+                            return '';
+                        }
+                        $active = request()->routeIs($routeName) || request()->routeIs(str_replace('.index', '.*', $routeName));
+                        $classes = $active
+                            ? 'bg-brand-600 text-white'
+                            : 'text-slate-300 hover:bg-white/5 hover:text-white';
+
+                        return '<a href="'.route($routeName).'" class="flex items-center gap-3 rounded-lg px-3 py-2 font-medium transition '.$classes.'">'.e($label).'</a>';
+                    };
                 @endphp
-                @foreach ($nav as [$label, $routeName])
-                    {{-- Super-admin-only surfaces (payment mode, user management)
-                         must not even be visible to ordinary staff. --}}
-                    @continue(in_array($routeName, $superAdminOnly, true) && ! auth()->user()?->isSuperAdmin())
-                    @if (Route::has($routeName))
-                        @php $active = request()->routeIs($routeName) || request()->routeIs(str_replace('.index', '.*', $routeName)); @endphp
-                        <a href="{{ route($routeName) }}"
-                           @class([
-                               'flex items-center gap-3 rounded-lg px-3 py-2 font-medium transition',
-                               'bg-brand-600 text-white' => $active,
-                               'text-slate-300 hover:bg-white/5 hover:text-white' => ! $active,
-                           ])>
-                            {{ $label }}
-                        </a>
-                    @endif
-                @endforeach
+
+                {{-- Dashboard is the shared landing for every role. --}}
+                {!! $navLink('Dashboard', 'admin.dashboard') !!}
+
+                {{-- Super Admin is scoped to configuration; Admin/staff to
+                     operations. The two sets are deliberately disjoint. --}}
+                @if ($isSuper)
+                    <div class="mt-4 mb-1 px-3">
+                        <p class="text-[10px] font-semibold uppercase tracking-widest text-slate-500">Konfigurasi Sistem</p>
+                    </div>
+                    @foreach ($configuration as [$label, $routeName])
+                        {!! $navLink($label, $routeName) !!}
+                    @endforeach
+                @else
+                    @foreach ($operational as [$label, $routeName])
+                        {!! $navLink($label, $routeName) !!}
+                    @endforeach
+                @endif
             </nav>
         </aside>
 
