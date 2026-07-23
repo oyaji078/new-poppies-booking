@@ -83,7 +83,7 @@ Pengalihan mode DOKU dipisahkan dari peran admin biasa:
 
 ## 7.4 Keamanan Webhook
 
-Endpoint `POST /api/payments/doku/notifications`:
+Endpoint `POST /webhook/doku/notifications`:
 
 1. Dikecualikan dari CSRF karena server-to-server — **bukan** karena keamanan dilonggarkan.
 2. Menolak permintaan tanpa header wajib dengan **400**, sebelum menulis apa pun

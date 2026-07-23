@@ -87,28 +87,28 @@ class DokuSignatureServiceTest extends TestCase
     public function test_verify_accepts_a_correctly_generated_signature(): void
     {
         $service = $this->service();
-        $signature = $service->sign('req-9', '2026-07-18T08:45:42Z', '/api/payments/doku/notifications', 'D1');
+        $signature = $service->sign('req-9', '2026-07-18T08:45:42Z', '/webhook/doku/notifications', 'D1');
 
         $this->assertTrue(
-            $service->verify($signature, 'req-9', '2026-07-18T08:45:42Z', '/api/payments/doku/notifications', 'D1')
+            $service->verify($signature, 'req-9', '2026-07-18T08:45:42Z', '/webhook/doku/notifications', 'D1')
         );
     }
 
     public function test_verify_rejects_a_tampered_body_digest(): void
     {
         $service = $this->service();
-        $signature = $service->sign('req-9', '2026-07-18T08:45:42Z', '/api/payments/doku/notifications', 'D1');
+        $signature = $service->sign('req-9', '2026-07-18T08:45:42Z', '/webhook/doku/notifications', 'D1');
 
         // Attacker changed the body, so the digest no longer matches.
         $this->assertFalse(
-            $service->verify($signature, 'req-9', '2026-07-18T08:45:42Z', '/api/payments/doku/notifications', 'TAMPERED')
+            $service->verify($signature, 'req-9', '2026-07-18T08:45:42Z', '/webhook/doku/notifications', 'TAMPERED')
         );
     }
 
     public function test_verify_rejects_a_different_request_target(): void
     {
         $service = $this->service();
-        $signature = $service->sign('req-9', '2026-07-18T08:45:42Z', '/api/payments/doku/notifications', 'D1');
+        $signature = $service->sign('req-9', '2026-07-18T08:45:42Z', '/webhook/doku/notifications', 'D1');
 
         $this->assertFalse(
             $service->verify($signature, 'req-9', '2026-07-18T08:45:42Z', '/somewhere/else', 'D1')

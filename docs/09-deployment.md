@@ -100,6 +100,24 @@ Ikut cadangkan `storage/app/public` (foto kamar).
 | Job antrean gagal | Tabel `failed_jobs` |
 | Hold menumpuk | Jumlah booking `HELD` yang `held_until` sudah lewat harus ~0 |
 
+## 9.6b Deploy Serverless (Vercel)
+
+Aplikasi dapat berjalan di Vercel (runtime `vercel-php`, entri `api/index.php`),
+namun ada beberapa hal khas serverless:
+
+| Hal | Konsekuensi & solusi |
+|-----|----------------------|
+| **Prefiks `/api` dipesan Vercel** | Rute `/api/*` Laravel tidak pernah sampai ke router. Karena itu webhook DOKU dipindah ke **`/webhook/doku/notifications`** (rute web), dan health ke `/health`. |
+| **`${APP_URL}` tidak diekspansi** | Di dashboard Vercel, isi URL penuh — `DOKU_NOTIFICATION_URL=https://<app>.vercel.app/webhook/doku/notifications`, `DOKU_CALLBACK_URL=https://<app>.vercel.app/payment/callback`, `APP_URL=https://<app>.vercel.app`. |
+| **Tidak ada queue worker** | Email konfirmasi (antre) tidak terkirim. Set `QUEUE_CONNECTION=sync` agar email dikirim inline saat webhook diproses, atau pakai queue eksternal. |
+| **Tidak ada scheduler** | Hold kedaluwarsa tidak dilepas otomatis. Pakai **Vercel Cron** yang memanggil endpoint penjalan `bookings:expire-holds`, atau cron eksternal. |
+| **Filesystem `/tmp` sementara** | Jangan memakai sesi/cache berbasis file. Deployment ini memakai `SESSION_DRIVER=cookie` agar sesi terenkripsi tidak menambah round-trip ke Supabase; cache persisten dapat memakai database eksternal. Log `/tmp` hilang tiap invocation. |
+| **`APP_DEBUG=false`** | Wajib di produksi. |
+
+Setelah mengubah rute/env, **redeploy** agar rute baru aktif, lalu daftarkan
+Notification URL baru di dashboard DOKU dan uji: `POST` ke URL itu harus menjawab
+**400** (bukan 404).
+
 ## 9.7 Verifikasi Pasca-Deploy
 
 - [ ] Beranda, daftar kamar, dan pencarian dapat diakses

@@ -35,7 +35,7 @@ class DokuConsoleCommandsTest extends TestCase
             'doku.client_id' => self::CLIENT_ID,
             'doku.secret_key' => self::SECRET,
             'doku.base_url' => 'https://api-sandbox.doku.com',
-            'doku.notification_url' => 'https://npseng.ngrok.io/api/payments/doku/notifications',
+            'doku.notification_url' => 'https://npseng.ngrok.io/webhook/doku/notifications',
             'doku.callback_url' => 'https://npseng.ngrok.io/payment/callback',
             'doku.payment_due_minutes' => 30,
         ]);
@@ -48,7 +48,7 @@ class DokuConsoleCommandsTest extends TestCase
 
     public function test_check_fails_when_doku_cannot_reach_the_notification_url(): void
     {
-        config(['doku.notification_url' => 'http://localhost:8000/api/payments/doku/notifications']);
+        config(['doku.notification_url' => 'http://localhost:8000/webhook/doku/notifications']);
 
         $this->artisan('doku:check')->assertFailed();
     }
@@ -141,7 +141,7 @@ class DokuConsoleCommandsTest extends TestCase
             // Rebuild the inbound request exactly as the webhook would see it and
             // run it through the production verifier.
             $inbound = Request::create(
-                'https://npseng.ngrok.io/api/payments/doku/notifications',
+                'https://npseng.ngrok.io/webhook/doku/notifications',
                 'POST',
                 [], [], [],
                 [
@@ -183,7 +183,7 @@ class DokuConsoleCommandsTest extends TestCase
         // exercises its 401 path.
         Http::assertSent(function ($request) {
             $inbound = Request::create(
-                'https://npseng.ngrok.io/api/payments/doku/notifications',
+                'https://npseng.ngrok.io/webhook/doku/notifications',
                 'POST',
                 [], [], [],
                 [

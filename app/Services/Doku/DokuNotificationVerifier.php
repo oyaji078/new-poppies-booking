@@ -48,7 +48,7 @@ class DokuNotificationVerifier
 
     /**
      * Request-Target for notifications is the PATH of our configured
-     * notification URL, e.g. /api/payments/doku/notifications.
+     * notification URL, e.g. /webhook/doku/notifications.
      */
     public function notificationTarget(): string
     {
@@ -61,6 +61,6 @@ class DokuNotificationVerifier
             }
         }
 
-        return '/api/payments/doku/notifications';
+        return '/webhook/doku/notifications';
     }
 }

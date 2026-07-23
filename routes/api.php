@@ -1,6 +1,5 @@
 <?php
 
-use App\Http\Controllers\Api\DokuNotificationController;
 use Illuminate\Support\Facades\Route;
 
 /*
@@ -8,14 +7,12 @@ use Illuminate\Support\Facades\Route;
 | API Routes
 |--------------------------------------------------------------------------
 |
-| The DOKU notification webhook is server-to-server. It is CSRF-exempt (see
-| bootstrap/app.php) and authenticated by DOKU signature verification instead.
-| Rate limited to blunt any attempt to brute-force signatures.
+| NOTE: on serverless hosts such as Vercel the /api/* path is reserved by the
+| platform's own function routing and never reaches Laravel, so nothing critical
+| may live here. The DOKU notification webhook therefore lives in routes/web.php
+| at /webhook/doku/notifications, and the health check is mirrored there at
+| /health so it works everywhere.
 |
 */
 
 Route::get('/health', fn () => response()->json(['status' => 'ok']));
-
-Route::post('/payments/doku/notifications', DokuNotificationController::class)
-    ->middleware('throttle:120,1')
-    ->name('payments.doku.notifications');

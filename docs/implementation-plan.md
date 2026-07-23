@@ -49,7 +49,7 @@ _Phase 0 output. Executes the development phases from §40 of the master prompt,
 - `config/doku.php`; `DokuSignatureService`, `DokuCheckoutService`, `DokuNotificationVerifier`, `DokuPaymentMapper`, `DokuNotificationService`.
 - Migrations: `payment_attempts`, `payment_events`.
 - Checkout creation from backend (recalculate total, unique invoice/request id, redacted payloads).
-- `POST /api/payments/doku/notifications` (CSRF-exempt): raw body, headers, signature, client id, invoice, amount, currency, duplicate detection, transactional confirm.
+- `POST /webhook/doku/notifications` (CSRF-exempt): raw body, headers, signature, client id, invoice, amount, currency, duplicate detection, transactional confirm.
 - Callback page ("Pembayaran sedang diperiksa" when no notification yet).
 - Payment rules: success, failure, expired hold, late payment (re-check inventory), amount mismatch → review, invalid signature → security log.
 - Confirmation email (queued). Tests: digest, signature, mapping, notification success, duplicate, invalid signature, amount mismatch, late payment ±inventory.

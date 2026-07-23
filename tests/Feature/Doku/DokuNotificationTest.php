@@ -27,7 +27,7 @@ class DokuNotificationTest extends TestCase
 
     private const SECRET = 'SK-unit-test-secret';
 
-    private const PATH = '/api/payments/doku/notifications';
+    private const PATH = '/webhook/doku/notifications';
 
     private RoomType $roomType;
 

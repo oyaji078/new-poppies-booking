@@ -136,7 +136,7 @@ class DokuConfigurationCheck
 
         // The signature over an inbound notification uses this path as
         // Request-Target, so a path that is not our route can never verify.
-        $expected = '/api/payments/doku/notifications';
+        $expected = '/webhook/doku/notifications';
         if ($path !== $expected) {
             $this->problems[] = "Path DOKU_NOTIFICATION_URL adalah \"{$path}\", seharusnya \"{$expected}\" — signature notifikasi tidak akan pernah cocok.";
         }

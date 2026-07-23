@@ -10,7 +10,7 @@ Referensi resmi:
 |-------|---------|----------|
 | Base URL | `https://api-sandbox.doku.com` | `https://api.doku.com` |
 | Endpoint | `POST /checkout/v1/payment` | sama |
-| Notification URL | `{APP_URL}/api/payments/doku/notifications` | sama |
+| Notification URL | `{APP_URL}/webhook/doku/notifications` | sama |
 
 Kredensial hanya dari environment (`config/doku.php`); tidak pernah ditulis di kode
 maupun disimpan di basis data.
@@ -64,7 +64,7 @@ Catatan penting:
   bukan hasil encode ulang dari array.
 - Permintaan GET tanpa body **tidak** menyertakan baris `Digest`.
 - Untuk **notifikasi masuk**, `Request-Target` adalah path notifikasi **milik kita**
-  (`/api/payments/doku/notifications`) — inilah yang membuat verifikasi webhook bekerja.
+  (`/webhook/doku/notifications`) — inilah yang membuat verifikasi webhook bekerja.
 
 Implementasi: `App\Services\Doku\DokuSignatureService`
 (diuji pada `tests/Unit/Doku/DokuSignatureServiceTest.php`).
@@ -125,7 +125,7 @@ Dua detail yang wajib dijaga pada badan permintaan:
 sequenceDiagram
     autonumber
     participant DK as DOKU
-    participant EP as POST /api/payments/doku/notifications
+    participant EP as POST /webhook/doku/notifications
     participant VF as DokuNotificationVerifier
     participant NS as DokuNotificationService
     participant IS as BookingInventoryService

@@ -189,19 +189,19 @@ class DokuCheckoutServiceTest extends TestCase
 
     public function test_it_tells_doku_where_to_send_the_notification_when_the_url_is_public(): void
     {
-        config(['doku.notification_url' => 'https://npseng.ngrok.io/api/payments/doku/notifications']);
+        config(['doku.notification_url' => 'https://npseng.ngrok.io/webhook/doku/notifications']);
         $this->fakeSuccess();
 
         app(DokuCheckoutService::class)->startPayment($this->bookingWithSnapshots());
 
         Http::assertSent(fn ($request) => data_get(json_decode($request->body(), true), 'additional_info.override_notification_url')
-            === 'https://npseng.ngrok.io/api/payments/doku/notifications');
+            === 'https://npseng.ngrok.io/webhook/doku/notifications');
     }
 
     public function test_it_omits_the_notification_override_when_the_url_is_not_public(): void
     {
         // DOKU rejects an override it cannot reach, which would fail the checkout.
-        config(['doku.notification_url' => 'http://localhost:8000/api/payments/doku/notifications']);
+        config(['doku.notification_url' => 'http://localhost:8000/webhook/doku/notifications']);
         $this->fakeSuccess();
 
         app(DokuCheckoutService::class)->startPayment($this->bookingWithSnapshots());

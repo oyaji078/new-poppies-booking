@@ -71,13 +71,13 @@ class SecurityGuardsTest extends TestCase
         // signature guard instead, proving the exemption did not weaken anything.
         // Without the signature headers at all the request is turned away as
         // malformed (400) before it can write a payment event.
-        $response = $this->postJson('/api/payments/doku/notifications', $payload);
+        $response = $this->postJson('/webhook/doku/notifications', $payload);
 
         $this->assertNotSame(419, $response->getStatusCode());
         $response->assertStatus(400);
 
         // With the headers present but a forged signature: rejected as unauthorised.
-        $signed = $this->postJson('/api/payments/doku/notifications', $payload, [
+        $signed = $this->postJson('/webhook/doku/notifications', $payload, [
             'Client-Id' => (string) config('doku.client_id'),
             'Request-Id' => 'req-forged',
             'Request-Timestamp' => '2026-07-18T08:45:42Z',

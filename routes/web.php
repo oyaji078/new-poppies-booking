@@ -3,6 +3,7 @@
 use App\Http\Controllers\AccountController;
 use App\Http\Controllers\Admin\DashboardController;
 use App\Http\Controllers\Admin\ReportController;
+use App\Http\Controllers\Api\DokuNotificationController;
 use App\Http\Controllers\Auth\AuthenticatedSessionController;
 use App\Http\Controllers\Auth\RegisteredUserController;
 use App\Http\Controllers\BookingController;
@@ -33,6 +34,9 @@ use Illuminate\Support\Facades\Route;
 | Public routes
 |--------------------------------------------------------------------------
 */
+// Health probe that works on every host (including Vercel, where /api is reserved).
+Route::get('/health', fn () => response()->json(['status' => 'ok']));
+
 Route::get('/', [HomeController::class, 'index'])->name('home');
 Route::get('/kamar', [RoomController::class, 'index'])->name('rooms.index');
 Route::get('/kamar/{roomType}', [RoomController::class, 'show'])->name('rooms.show');
@@ -55,6 +59,15 @@ Route::post('/pemesanan/{booking}/batal', [BookingController::class, 'cancel'])-
 // prefetch or link scanner must never be able to trigger it.
 Route::post('/pembayaran/{booking}', [PaymentController::class, 'start'])->name('payment.start');
 Route::get('/payment/callback', [PaymentController::class, 'callback'])->name('payment.callback');
+
+// DOKU server-to-server notification. It deliberately lives OUTSIDE the /api
+// prefix: on serverless hosts (Vercel) the /api path is reserved for the
+// platform's own functions and never reaches Laravel's router. Web routes do.
+// CSRF-exempt (see bootstrap/app.php) and authenticated by DOKU signature.
+// Rate limited to blunt any attempt to brute-force signatures.
+Route::post('/webhook/doku/notifications', DokuNotificationController::class)
+    ->middleware('throttle:120,1')
+    ->name('payments.doku.notifications');
 // Polled by the "waiting for confirmation" pages so they refresh the instant the
 // server-to-server notification lands. Rate limited — it is called on a timer.
 Route::get('/pemesanan/{booking}/status', [PaymentController::class, 'status'])

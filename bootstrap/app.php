@@ -23,7 +23,7 @@ return Application::configure(basePath: dirname(__DIR__))
         // The DOKU notification webhook is server-to-server and carries no CSRF
         // token; it is authenticated by signature instead (see DokuNotificationVerifier).
         $middleware->validateCsrfTokens(except: [
-            'api/payments/doku/notifications',
+            'webhook/doku/notifications',
         ]);
 
         // Behind a tunnel/reverse proxy (Cloudflare, ngrok) the TLS terminates at
