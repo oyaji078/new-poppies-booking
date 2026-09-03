@@ -286,8 +286,14 @@ class DokuNotificationService
             /** @var Booking $locked */
             $locked = Booking::query()->whereKey($booking->id)->lockForUpdate()->first();
 
+            // Remember whether the rooms are still held for this booking. The
+            // hold sweeper skips PAYMENT_REVIEW, so nothing else will ever tell
+            // the resolving admin's code whether to convert or release them.
+            $holdsInventory = in_array($locked->status, [BookingStatus::HELD, BookingStatus::PENDING_PAYMENT], true);
+
             if ($locked->status->canTransitionTo(BookingStatus::PAYMENT_REVIEW)) {
                 $locked->transitionTo(BookingStatus::PAYMENT_REVIEW);
+                $locked->review_inventory_held = $holdsInventory;
             }
             $locked->payment_status = PaymentStatus::REVIEW;
             $locked->save();

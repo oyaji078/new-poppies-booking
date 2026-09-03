@@ -3,6 +3,7 @@
 namespace Database\Seeders;
 
 use App\Models\SystemSetting;
+use App\Services\Settings\SettingService;
 use Illuminate\Database\Seeder;
 
 class SettingsSeeder extends Seeder
@@ -33,6 +34,10 @@ class SettingsSeeder extends Seeder
             // before check-in. Refund = paid − (paid × this%). 0 = always full
             // refund, 100 = no refund.
             ['cancellation_fee_percent', '50', 'integer', 'booking', 'Biaya Pembatalan (%)', false],
+
+            // Pay-at-hotel. Reserves the room without an online payment, so the
+            // desk collects on arrival. Turn off to force gateway payment only.
+            ['cash_payment_enabled', '1', 'boolean', 'booking', 'Aktifkan Bayar di Tempat (Tunai)', true],
         ];
 
         foreach ($settings as [$key, $value, $type, $group, $label, $isPublic]) {
@@ -41,5 +46,11 @@ class SettingsSeeder extends Seeder
                 ['value' => $value, 'type' => $type, 'group' => $group, 'label' => $label, 'is_public' => $isPublic],
             );
         }
+
+        // Writing rows directly bypasses SettingService::set(), which is what
+        // normally busts the cache. That cache is rememberForever, so without
+        // this a freshly seeded setting would never be read — it would look as
+        // though the seeder had done nothing.
+        app(SettingService::class)->flush();
     }
 }

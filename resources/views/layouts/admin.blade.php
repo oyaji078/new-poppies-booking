@@ -15,31 +15,33 @@
 <body class="min-h-screen bg-slate-100 font-sans text-slate-800 antialiased" x-data="{ sidebar: false }">
     <div class="flex min-h-screen">
         {{-- Sidebar --}}
+        {{-- flex-col + a flex-1/min-h-0 nav is what makes the menu scrollable:
+             without min-h-0 the nav refuses to shrink below its content height
+             and the last entries are clipped off the bottom of the viewport. --}}
         <aside
-            class="fixed inset-y-0 left-0 z-40 w-64 -translate-x-full transform bg-brand-950 text-slate-300 transition lg:translate-x-0"
+            class="fixed inset-y-0 left-0 z-40 flex w-64 -translate-x-full transform flex-col bg-brand-950 text-slate-300 transition lg:translate-x-0"
             :class="sidebar && '!translate-x-0'"
         >
-            <div class="flex h-16 items-center gap-2.5 border-b border-white/10 px-5">
+            <div class="flex h-16 shrink-0 items-center gap-2.5 border-b border-white/10 px-5">
                 <span class="grid h-9 w-9 place-items-center rounded-lg bg-brand-600 font-display font-semibold text-white">NP</span>
                 <span class="font-display text-lg font-semibold text-white">Admin Panel</span>
             </div>
-            <nav class="flex flex-col gap-1 overflow-y-auto p-3 text-sm">
+            <nav class="flex min-h-0 flex-1 flex-col gap-1 overflow-y-auto p-3 text-sm">
                 @php
                     $nav = [
                         ['Dashboard', 'admin.dashboard', null],
                         ['Reservasi', 'admin.bookings.index', null],
-                        ['Pembayaran', 'admin.payments.index', null],
                         ['Peninjauan Pembayaran', 'admin.payments.review', null],
                         ['Check-in / Check-out', 'admin.frontdesk.index', null],
                         ['Tipe Kamar', 'admin.room-types.index', null],
                         ['Kamar Fisik', 'admin.rooms.index', null],
                         ['Fasilitas', 'admin.amenities.index', null],
-                        ['Inventaris & Kalender', 'admin.inventory.index', null],
                         ['Promosi', 'admin.promotions.index', null],
                         ['Pembatalan & Refund', 'admin.cancellations.index', null],
                         ['Tamu', 'admin.guests.index', null],
                         ['Laporan', 'admin.reports.index', null],
                         ['FAQ / Chatbot', 'admin.faqs.index', null],
+                        ['Galeri', 'admin.gallery.index', null],
                         ['Konten Website', 'admin.pages.index', null],
                         ['Pengaturan', 'admin.settings.edit', null],
                         ['Mode Pembayaran DOKU', 'admin.doku.environment', null],

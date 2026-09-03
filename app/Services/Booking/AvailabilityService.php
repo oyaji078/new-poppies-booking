@@ -5,6 +5,7 @@ namespace App\Services\Booking;
 use App\Models\RoomType;
 use App\Models\RoomTypeInventory;
 use App\Support\StayPeriod;
+use Carbon\CarbonImmutable;
 use Illuminate\Support\Collection;
 
 /**
@@ -39,6 +40,49 @@ class AvailabilityService
     public function isAvailable(RoomType $roomType, StayPeriod $stay, int $rooms = 1): bool
     {
         return $rooms > 0 && $this->availableUnits($roomType, $stay) >= $rooms;
+    }
+
+    /**
+     * How many rooms are free on each individual date in a range — the numbers
+     * behind the public availability calendar.
+     *
+     * Per DATE, not per stay: a date here is a NIGHT. A guest checking out on a
+     * fully booked date is fine, because the checkout day is never occupied.
+     *
+     * @return array<string, int> Y-m-d => rooms still bookable that night
+     */
+    public function dailyAvailability(RoomType $roomType, string $from, string $through): array
+    {
+        $start = CarbonImmutable::parse($from)->startOfDay();
+        $end = CarbonImmutable::parse($through)->startOfDay();
+
+        if ($end < $start) {
+            return [];
+        }
+
+        $sellableCap = $roomType->sellableRoomCount();
+
+        // forDateRange treats the end as exclusive (checkout night), so ask for
+        // one day past the last night we want to report on.
+        $rows = RoomTypeInventory::query()
+            ->where('room_type_id', $roomType->id)
+            ->forDateRange($start->toDateString(), $end->addDay()->toDateString())
+            ->get()
+            ->keyBy(fn (RoomTypeInventory $row) => $row->inventory_date->toDateString());
+
+        $result = [];
+        for ($date = $start; $date <= $end; $date = $date->addDay()) {
+            $key = $date->toDateString();
+            $row = $rows->get($key);
+
+            // No row yet simply means nobody has booked this date — the room
+            // type's default allotment is still fully available.
+            $free = $row ? $row->available() : $roomType->default_inventory;
+
+            $result[$key] = max(0, min($free, $sellableCap));
+        }
+
+        return $result;
     }
 
     /**

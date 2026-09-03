@@ -24,7 +24,7 @@ class SecurityGuardsTest extends TestCase
 
     public function test_admin_area_is_closed_to_guests_and_customers(): void
     {
-        $adminUrls = ['/admin', '/admin/reservasi', '/admin/laporan', '/admin/inventaris', '/admin/pembatalan'];
+        $adminUrls = ['/admin', '/admin/reservasi', '/admin/laporan', '/admin/front-desk', '/admin/pembatalan'];
 
         foreach ($adminUrls as $url) {
             $this->get($url)->assertRedirect(route('login'));

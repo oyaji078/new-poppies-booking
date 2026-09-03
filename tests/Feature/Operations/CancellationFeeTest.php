@@ -16,6 +16,7 @@ use App\Models\RoomTypeInventory;
 use App\Services\Operations\CancellationService;
 use App\Services\Settings\SettingService;
 use App\Support\StayPeriod;
+use Carbon\Carbon;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Tests\TestCase;
 
@@ -32,12 +33,33 @@ class CancellationFeeTest extends TestCase
     protected function setUp(): void
     {
         parent::setUp();
+
+        // The fee tiers are decided by the clock relative to check-in time, so
+        // the clock has to be fixed. Left free, "check-in is N hours away" flips
+        // tier depending on the hour the suite happens to run at.
+        Carbon::setTestNow(Carbon::parse('2026-08-16 20:00:00', 'Asia/Makassar'));
+
         app(SettingService::class)->set('free_cancellation_hours', 24, 'integer');
         app(SettingService::class)->set('check_in_time', '14:00', 'string');
         app(SettingService::class)->set('cancellation_fee_percent', 50, 'integer');
 
         $this->roomType = RoomType::factory()->create(['default_inventory' => 2]);
         Room::factory()->count(2)->create(['room_type_id' => $this->roomType->id]);
+    }
+
+    protected function tearDown(): void
+    {
+        Carbon::setTestNow();
+        parent::tearDown();
+    }
+
+    /**
+     * Check-in tomorrow at 14:00, i.e. 18 hours out: past the 24h free window
+     * but comfortably before check-in — the middle tier.
+     */
+    private function bookingPastFreeWindow(): Booking
+    {
+        return $this->paidBooking(now()->addDay()->toDateString(), now()->addDays(3)->toDateString());
     }
 
     private function paidBooking(string $checkIn, string $checkOut, int $amount = 2_000_000): Booking
@@ -90,8 +112,7 @@ class CancellationFeeTest extends TestCase
 
     public function test_cancelling_after_the_window_keeps_the_configured_fee(): void
     {
-        // Check-in is 3 hours away → past the 24h free window, before check-in.
-        $booking = $this->paidBooking(now()->addHours(3)->toDateString(), now()->addDays(2)->toDateString());
+        $booking = $this->bookingPastFreeWindow();
 
         $request = app(CancellationService::class)->cancel($booking, 'Batal mendadak');
 
@@ -103,7 +124,7 @@ class CancellationFeeTest extends TestCase
     public function test_the_fee_percentage_is_configurable(): void
     {
         app(SettingService::class)->set('cancellation_fee_percent', 25, 'integer');
-        $booking = $this->paidBooking(now()->addHours(3)->toDateString(), now()->addDays(2)->toDateString());
+        $booking = $this->bookingPastFreeWindow();
 
         $request = app(CancellationService::class)->cancel($booking, 'Batal mendadak');
 
@@ -139,7 +160,7 @@ class CancellationFeeTest extends TestCase
     public function test_a_hundred_percent_fee_refunds_nothing_and_raises_no_record(): void
     {
         app(SettingService::class)->set('cancellation_fee_percent', 100, 'integer');
-        $booking = $this->paidBooking(now()->addHours(3)->toDateString(), now()->addDays(2)->toDateString());
+        $booking = $this->bookingPastFreeWindow();
 
         $request = app(CancellationService::class)->cancel($booking, 'Batal, hangus');
 

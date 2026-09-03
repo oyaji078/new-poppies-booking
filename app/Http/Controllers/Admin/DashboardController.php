@@ -27,15 +27,6 @@ class DashboardController extends Controller
                 ->whereDate('check_in_date', $today)
                 ->count(),
 
-            'departures_today' => Booking::query()
-                ->where('status', BookingStatus::CHECKED_IN->value)
-                ->whereDate('check_out_date', $today)
-                ->count(),
-
-            'in_house' => Booking::query()
-                ->where('status', BookingStatus::CHECKED_IN->value)
-                ->count(),
-
             'bookings_today' => Booking::query()->whereDate('created_at', $today)->count(),
 
             'pending_payments' => Booking::query()
@@ -48,6 +39,13 @@ class DashboardController extends Controller
 
             'refunds_pending' => Booking::query()
                 ->where('payment_status', PaymentStatus::REFUND_PENDING->value)
+                ->count(),
+
+            // Rooms reserved but not yet paid for — pay-at-hotel bookings the
+            // front desk still has to collect on.
+            'awaiting_cash' => Booking::query()
+                ->whereIn('status', [BookingStatus::CONFIRMED->value, BookingStatus::CHECKED_IN->value])
+                ->whereIn('payment_status', [PaymentStatus::UNPAID->value, PaymentStatus::PENDING->value])
                 ->count(),
 
             'maintenance_rooms' => Room::query()->where('under_maintenance', true)->count(),
@@ -67,6 +65,17 @@ class DashboardController extends Controller
 
         $totalRooms = (int) ($inventoryToday->total ?? 0);
         $occupiedRooms = (int) ($inventoryToday->confirmed ?? 0);
+
+        // Inventory rows are created lazily, on first booking for a date. Until
+        // one exists the sum is 0 and the card reads "0 dari 0 kamar" — which
+        // looks like a broken dashboard rather than an empty hotel. Fall back to
+        // the physical room count, which is the real denominator anyway.
+        if ($totalRooms === 0) {
+            $totalRooms = Room::query()
+                ->where('is_active', true)
+                ->where('under_maintenance', false)
+                ->count();
+        }
 
         $occupancy = [
             'total' => $totalRooms,

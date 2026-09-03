@@ -66,17 +66,20 @@
                 @endif
             </div>
 
-            {{-- Booking card (sticky on desktop) --}}
+            {{-- Booking card (sticky on desktop). The calendar makes this tall,
+                 so let it scroll internally rather than run off the viewport. --}}
             <div class="lg:col-span-1">
-                <div class="card sticky top-24 p-6">
+                <div id="booking" class="card sticky top-24 max-h-[calc(100vh-7rem)] overflow-y-auto p-6">
                     <p class="text-sm text-slate-500">Mulai dari</p>
                     <p class="font-display text-3xl font-semibold text-slate-900">{{ rupiah($roomType->base_price) }}
                         <span class="text-sm font-normal text-slate-500">/ malam</span>
                     </p>
                     <p class="mt-1 text-xs text-slate-400">Belum termasuk pajak &amp; layanan. Total dihitung saat pemesanan.</p>
 
-                    <a href="{{ route('search') }}" class="btn-primary mt-5 w-full">Cek Ketersediaan</a>
-                    <p class="mt-3 text-center text-xs text-slate-400">Pilih tanggal menginap untuk melihat ketersediaan dan harga total.</p>
+                    {{-- Real availability, straight from daily inventory. --}}
+                    <div class="mt-5">
+                        <livewire:public.availability-calendar :room-type="$roomType" />
+                    </div>
 
                     <ul class="mt-6 space-y-2 border-t border-slate-100 pt-4 text-sm text-slate-600">
                         <li class="flex items-center gap-2"><span class="text-brand-600">✓</span> Pembatalan sesuai kebijakan</li>
@@ -95,7 +98,7 @@
                 <p class="text-xs text-slate-500">Mulai dari</p>
                 <p class="font-display text-lg font-semibold text-slate-900">{{ rupiah($roomType->base_price) }}</p>
             </div>
-            <a href="{{ route('search') }}" class="btn-primary">Cek Ketersediaan</a>
+            <a href="#booking" class="btn-primary">Cek Ketersediaan</a>
         </div>
     </div>
 </x-layouts.public>

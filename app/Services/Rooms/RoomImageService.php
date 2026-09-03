@@ -4,47 +4,25 @@ namespace App\Services\Rooms;
 
 use App\Models\RoomImage;
 use App\Models\RoomType;
+use App\Services\Media\ImageStorage;
 use Illuminate\Http\UploadedFile;
-use Illuminate\Support\Facades\Http;
-use Illuminate\Support\Facades\Storage;
-use Illuminate\Support\Str;
-use RuntimeException;
 
 /**
  * Handles room image storage safely: validated MIME/size (validation happens in
  * the Form Request / Livewire rules), random file names to defeat path/exec
  * tricks, primary-image bookkeeping, and orphan cleanup on delete.
+ *
+ * Where the bytes actually land is ImageStorage's concern.
  */
 class RoomImageService
 {
-    private const DISK = 'public';
-
     private const DIR = 'room-images';
+
+    public function __construct(private readonly ImageStorage $storage) {}
 
     public function store(RoomType $roomType, UploadedFile $file, ?string $alt = null): RoomImage
     {
-        $extension = strtolower($file->getClientOriginalExtension() ?: $file->extension() ?: 'jpg');
-        $filename = Str::uuid()->toString().'.'.$extension;
-
-        $path = self::DIR.'/'.$filename;
-
-        if ($this->usesSupabase()) {
-            $response = Http::withToken($this->serviceKey())
-                ->withHeaders([
-                    'apikey' => $this->serviceKey(),
-                    'x-upsert' => 'false',
-                ])
-                ->withBody($file->getContent(), $file->getMimeType() ?: 'application/octet-stream')
-                ->post($this->objectUrl($path));
-
-            if (! $response->successful()) {
-                throw new RuntimeException(
-                    'Gagal menyimpan gambar ke penyimpanan persisten (HTTP '.$response->status().').'
-                );
-            }
-        } else {
-            $path = $file->storeAs(self::DIR, $filename, self::DISK);
-        }
+        $path = $this->storage->put($file, self::DIR);
 
         $isFirst = ! $roomType->images()->exists();
         $nextSort = (int) $roomType->images()->max('sort_order') + 1;
@@ -69,19 +47,7 @@ class RoomImageService
         $wasPrimary = $image->is_primary;
         $roomType = $image->roomType;
 
-        if ($this->usesSupabase()) {
-            $response = Http::withToken($this->serviceKey())
-                ->withHeaders(['apikey' => $this->serviceKey()])
-                ->delete($this->objectUrl($image->path));
-
-            if (! $response->successful() && $response->status() !== 404) {
-                throw new RuntimeException(
-                    'Gagal menghapus gambar dari penyimpanan persisten (HTTP '.$response->status().').'
-                );
-            }
-        } else {
-            Storage::disk(self::DISK)->delete($image->path);
-        }
+        $this->storage->delete($image->path);
         $image->delete();
 
         // Promote another image to primary so a type is never left without one.
@@ -99,28 +65,5 @@ class RoomImageService
         foreach (array_values($orderedIds) as $index => $id) {
             $roomType->images()->whereKey($id)->update(['sort_order' => $index + 1]);
         }
-    }
-
-    private function usesSupabase(): bool
-    {
-        return $this->storageUrl() !== '' && $this->serviceKey() !== '';
-    }
-
-    private function storageUrl(): string
-    {
-        return (string) config('services.supabase_storage.url', '');
-    }
-
-    private function serviceKey(): string
-    {
-        return (string) config('services.supabase_storage.service_key', '');
-    }
-
-    private function objectUrl(string $path): string
-    {
-        $bucket = rawurlencode((string) config('services.supabase_storage.bucket', 'room-images'));
-        $encodedPath = implode('/', array_map('rawurlencode', explode('/', $path)));
-
-        return $this->storageUrl().'/storage/v1/object/'.$bucket.'/'.$encodedPath;
     }
 }

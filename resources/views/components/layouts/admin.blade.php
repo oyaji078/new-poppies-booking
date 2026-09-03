@@ -18,41 +18,47 @@
 </head>
 <body class="min-h-screen bg-slate-100 font-sans text-slate-800 antialiased" x-data="{ sidebar: false }">
     <div class="flex min-h-screen">
+        {{-- flex-col + a flex-1/min-h-0 nav is what makes the menu scrollable:
+             without min-h-0 the nav refuses to shrink below its content height
+             and the last entries are clipped off the bottom of the viewport. --}}
         <aside
-            class="fixed inset-y-0 left-0 z-40 w-64 -translate-x-full transform bg-brand-950 text-slate-300 transition lg:translate-x-0"
+            class="fixed inset-y-0 left-0 z-40 flex w-64 -translate-x-full transform flex-col bg-brand-950 text-slate-300 transition lg:translate-x-0"
             :class="sidebar && '!translate-x-0'"
         >
-            <div class="flex h-16 items-center gap-2.5 border-b border-white/10 px-5">
+            <div class="flex h-16 shrink-0 items-center gap-2.5 border-b border-white/10 px-5">
                 <span class="grid h-9 w-9 place-items-center rounded-lg bg-brand-600 font-display font-semibold text-white">NP</span>
                 <span class="font-display text-lg font-semibold text-white">Admin Panel</span>
             </div>
-            <nav class="flex flex-col gap-1 overflow-y-auto p-3 text-sm">
+            <nav class="flex min-h-0 flex-1 flex-col gap-1 overflow-y-auto p-3 text-sm">
                 @php
                     $isSuper = auth()->user()?->isSuperAdmin();
 
                     // Day-to-day operations — the Admin's domain.
                     $operational = [
                         ['Reservasi', 'admin.bookings.index'],
-                        ['Pembayaran', 'admin.payments.index'],
                         ['Peninjauan Pembayaran', 'admin.payments.review'],
                         ['Check-in / Check-out', 'admin.frontdesk.index'],
                         ['Tipe Kamar', 'admin.room-types.index'],
                         ['Kamar Fisik', 'admin.rooms.index'],
                         ['Fasilitas', 'admin.amenities.index'],
-                        ['Inventaris & Kalender', 'admin.inventory.index'],
                         ['Promosi', 'admin.promotions.index'],
                         ['Pembatalan & Refund', 'admin.cancellations.index'],
                         ['Tamu', 'admin.guests.index'],
                         ['Laporan', 'admin.reports.index'],
                         ['FAQ / Chatbot', 'admin.faqs.index'],
+                        ['Galeri', 'admin.gallery.index'],
                         ['Konten Website', 'admin.pages.index'],
                         ['Audit Log', 'admin.audit.index'],
                     ];
                     // System & money configuration — the Super Admin's domain.
+                    // The audit log appears in BOTH lists: overseeing who did what
+                    // is exactly the Super Admin's job, and operations staff need
+                    // it to trace their own actions.
                     $configuration = [
                         ['Pengaturan Sistem', 'admin.settings.edit'],
                         ['Mode Pembayaran DOKU', 'admin.doku.environment'],
                         ['Kelola Pengguna', 'admin.users.index'],
+                        ['Audit Log', 'admin.audit.index'],
                     ];
                     $navLink = function (string $label, string $routeName) {
                         if (! Route::has($routeName)) {

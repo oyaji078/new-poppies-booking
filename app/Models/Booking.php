@@ -27,7 +27,7 @@ class Booking extends Model
         'promotion_id', 'promotion_code',
         'special_request', 'arrival_time', 'cancellation_policy',
         'held_until', 'confirmed_at', 'cancelled_at', 'checked_in_at', 'checked_out_at',
-        'cancellation_reason', 'late_payment_recovery',
+        'cancellation_reason', 'late_payment_recovery', 'review_inventory_held',
     ];
 
     protected function casts(): array
@@ -53,6 +53,7 @@ class Booking extends Model
             'checked_in_at' => 'datetime',
             'checked_out_at' => 'datetime',
             'late_payment_recovery' => 'boolean',
+            'review_inventory_held' => 'boolean',
         ];
     }
 

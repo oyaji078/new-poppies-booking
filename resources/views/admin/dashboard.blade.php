@@ -7,11 +7,9 @@
     </div>
 
     {{-- Operational cards --}}
-    <div class="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
+    <div class="grid gap-4 sm:grid-cols-2">
         @foreach ([
             ['Kedatangan Hari Ini', $metrics['arrivals_today'], 'admin.frontdesk.index', 'brand'],
-            ['Keberangkatan Hari Ini', $metrics['departures_today'], 'admin.frontdesk.index', 'sky'],
-            ['Sedang Menginap', $metrics['in_house'], 'admin.frontdesk.index', 'emerald'],
             ['Reservasi Baru Hari Ini', $metrics['bookings_today'], 'admin.bookings.index', 'slate'],
         ] as [$label, $value, $route, $tone])
             <a href="{{ Route::has($route) ? route($route) : '#' }}" class="card p-5 transition hover:shadow-md">
@@ -22,11 +20,19 @@
     </div>
 
     {{-- Attention needed --}}
-    <div class="mt-4 grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
+    <div class="mt-4 grid gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5">
         <div class="card p-5">
             <p class="text-sm font-medium text-slate-500">Menunggu Pembayaran</p>
             <p class="mt-2 font-display text-3xl font-semibold text-amber-600">{{ number_format($metrics['pending_payments']) }}</p>
+            <p class="mt-1 text-xs text-slate-400">Hold yang belum diselesaikan</p>
         </div>
+        <a href="{{ route('admin.frontdesk.index') }}" class="card p-5 transition hover:shadow-md">
+            <p class="text-sm font-medium text-slate-500">Tagihan Belum Lunas</p>
+            <p class="mt-2 font-display text-3xl font-semibold {{ $metrics['awaiting_cash'] > 0 ? 'text-amber-600' : 'text-slate-900' }}">
+                {{ number_format($metrics['awaiting_cash']) }}
+            </p>
+            <p class="mt-1 text-xs text-slate-400">Bayar di tempat, tagih di front desk</p>
+        </a>
         <a href="{{ route('admin.payments.review') }}" class="card p-5 transition hover:shadow-md">
             <p class="text-sm font-medium text-slate-500">Peninjauan Pembayaran</p>
             <p class="mt-2 font-display text-3xl font-semibold {{ $metrics['payment_reviews'] > 0 ? 'text-orange-600' : 'text-slate-900' }}">

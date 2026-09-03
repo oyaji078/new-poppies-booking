@@ -1,49 +1,93 @@
 <div>
-    {{-- Tabs --}}
-    <div class="mb-6 flex gap-2 border-b border-slate-200">
-        @foreach (['arrivals' => 'Kedatangan Hari Ini', 'inhouse' => 'Sedang Menginap', 'departures' => 'Keberangkatan'] as $key => $label)
-            <button wire:click="$set('tab', '{{ $key }}')"
+    {{-- These chips are the colour legend AND the filter: the swatch explains
+         what each card colour means, clicking it narrows the board to that
+         stage, clicking it again clears the filter. --}}
+    <div class="mb-6 flex flex-wrap items-center gap-2">
+        <button wire:click="$set('filter', '')"
+                @class([
+                    'flex items-center gap-2 rounded-lg border px-3 py-1.5 text-xs font-medium transition',
+                    'border-brand-500 bg-brand-50 text-brand-800' => $filter === '',
+                    'border-slate-200 text-slate-600 hover:bg-slate-50' => $filter !== '',
+                ])>
+            Semua
+            <span class="rounded bg-slate-900/10 px-1.5 py-0.5 text-[10px]">{{ $totalCount }}</span>
+        </button>
+
+        @foreach (\App\Livewire\Admin\FrontDesk::filterableStatuses() as $status)
+            @php
+                $tone = \App\Livewire\Admin\FrontDesk::tone($status);
+                $count = $counts[$status->value] ?? 0;
+                $active = $filter === $status->value;
+            @endphp
+            <button wire:click="setFilter('{{ $status->value }}')"
+                    wire:key="filter-{{ $status->value }}"
                     @class([
-                        'border-b-2 px-4 py-2.5 text-sm font-medium transition',
-                        'border-brand-600 text-brand-700' => $tab === $key,
-                        'border-transparent text-slate-500 hover:text-slate-800' => $tab !== $key,
-                    ])>{{ $label }}</button>
+                        'flex items-center gap-2 rounded-lg border px-3 py-1.5 text-xs font-medium transition',
+                        'border-brand-500 bg-brand-50 text-brand-800' => $active,
+                        'border-slate-200 text-slate-600 hover:bg-slate-50' => ! $active,
+                        'opacity-50' => $count === 0 && ! $active,
+                    ])>
+                <span class="h-3 w-3 rounded-sm border {{ $tone['card'] }}"></span>
+                {{ $tone['label'] }}
+                <span class="rounded bg-slate-900/10 px-1.5 py-0.5 text-[10px]">{{ $count }}</span>
+            </button>
         @endforeach
     </div>
 
     @if ($bookings->isEmpty())
         <div class="card p-16 text-center">
             <p class="font-display text-lg font-semibold text-slate-700">Tidak ada data</p>
-            <p class="mt-1 text-sm text-slate-500">Belum ada pemesanan pada kategori ini hari ini.</p>
+            @if ($filter !== '')
+                <p class="mt-1 text-sm text-slate-500">
+                    Tidak ada pemesanan berstatus
+                    <strong>{{ \App\Livewire\Admin\FrontDesk::tone(\App\Enums\BookingStatus::from($filter))['label'] }}</strong>
+                    hari ini.
+                </p>
+                <button wire:click="$set('filter', '')" class="btn-outline mt-4 text-sm">Tampilkan semua</button>
+            @else
+                <p class="mt-1 text-sm text-slate-500">Belum ada kedatangan, tamu menginap, atau keberangkatan hari ini.</p>
+            @endif
         </div>
     @else
         <div class="space-y-3">
             @foreach ($bookings as $booking)
-                <div wire:key="fd-{{ $booking->id }}" class="card p-5">
+                @php $tone = \App\Livewire\Admin\FrontDesk::tone($booking->status); @endphp
+                <div wire:key="fd-{{ $booking->id }}" class="card p-5 transition-colors {{ $tone['card'] }}">
                     <div class="flex flex-wrap items-start justify-between gap-4">
                         <div>
-                            <p class="font-mono font-semibold text-slate-900">{{ $booking->code }}</p>
+                            <div class="flex flex-wrap items-center gap-2">
+                                <p class="font-mono font-semibold text-slate-900">{{ $booking->code }}</p>
+                                <span class="badge {{ $tone['badge'] }}">{{ $tone['label'] }}</span>
+                            </div>
                             <p class="mt-1 text-sm text-slate-700">{{ $booking->customer_name }} · {{ $booking->customer_phone }}</p>
                             <p class="mt-1 text-sm text-slate-500">
                                 {{ $booking->check_in_date->translatedFormat('d M') }} – {{ $booking->check_out_date->translatedFormat('d M Y') }}
                                 · {{ $booking->rooms }} kamar · {{ $booking->adults }} dewasa
                             </p>
-                            @if ($tab !== 'arrivals')
-                                @php $assigned = $booking->items->flatMap->assignments->pluck('room.room_number')->filter(); @endphp
-                                @if ($assigned->isNotEmpty())
-                                    <p class="mt-1 text-sm text-brand-700">Kamar: {{ $assigned->join(', ') }}</p>
-                                @endif
+                            @php $assigned = $booking->items->flatMap->assignments->pluck('room.room_number')->filter(); @endphp
+                            @if ($assigned->isNotEmpty())
+                                <p class="mt-1 text-sm text-brand-700">Kamar: {{ $assigned->join(', ') }}</p>
                             @endif
                             @if ($booking->special_request)
                                 <p class="mt-2 rounded bg-amber-50 px-2 py-1 text-xs text-amber-800">Permintaan: {{ $booking->special_request }}</p>
                             @endif
+                            @if (($outstanding[$booking->id] ?? 0) > 0)
+                                <p class="mt-2 inline-flex rounded bg-amber-100 px-2 py-1 text-xs font-medium text-amber-800">
+                                    Belum lunas: {{ rupiah($outstanding[$booking->id]) }}
+                                </p>
+                            @endif
                         </div>
                         <div class="flex flex-wrap gap-2">
-                            @if ($tab === 'arrivals')
+                            @if (($outstanding[$booking->id] ?? 0) > 0 && in_array($booking->status, [\App\Enums\BookingStatus::CONFIRMED, \App\Enums\BookingStatus::CHECKED_IN], true))
+                                <button wire:click="openCash({{ $booking->id }})" class="btn-outline text-sm">Terima Tunai</button>
+                            @endif
+                            @if ($booking->status === \App\Enums\BookingStatus::CONFIRMED)
                                 <button wire:click="openNoShow({{ $booking->id }})" class="btn-outline text-sm text-rose-600">Tidak Hadir</button>
                                 <button wire:click="openCheckIn({{ $booking->id }})" class="btn-primary text-sm">Check-in</button>
-                            @else
+                            @elseif ($booking->status === \App\Enums\BookingStatus::CHECKED_IN)
                                 <button wire:click="openCheckOut({{ $booking->id }})" class="btn-primary text-sm">Check-out</button>
+                            @else
+                                <span class="text-sm text-slate-400">Selesai</span>
                             @endif
                         </div>
                     </div>
@@ -64,21 +108,76 @@
 
                     @error('selectedRooms') <p class="mt-3 rounded-lg bg-rose-50 px-4 py-2 text-sm text-rose-700">{{ $message }}</p> @enderror
 
+                    @if ($checkInBooking->rooms > 1)
+                        <div class="mt-3 flex flex-wrap items-center justify-between gap-2 rounded-lg bg-slate-50 px-4 py-3">
+                            <p class="text-sm text-slate-600">
+                                Pemesanan ini {{ $checkInBooking->rooms }} kamar — pilih {{ $checkInBooking->rooms }} kamar fisik yang berbeda.
+                            </p>
+                            <button wire:click="autoAssignRooms" class="btn-outline text-sm">Pilih Otomatis</button>
+                        </div>
+                    @else
+                        <div class="mt-3 text-right">
+                            <button wire:click="autoAssignRooms" class="btn-ghost text-xs">Pilih otomatis</button>
+                        </div>
+                    @endif
+
                     <div class="mt-5 space-y-5">
                         @foreach ($checkInBooking->items as $item)
+                            @php
+                                $picked = array_values(array_filter((array) ($selectedRooms[$item->id] ?? [])));
+                                $needed = $item->rooms;
+                                $complete = count($picked) >= $needed;
+                            @endphp
                             <div>
-                                <label class="label">{{ $item->room_type_name }} — pilih {{ $item->rooms }} kamar</label>
-                                @if (($availableRooms[$item->id] ?? collect())->isEmpty())
+                                <div class="flex flex-wrap items-baseline justify-between gap-2">
+                                    <label class="label !mb-0">{{ $item->room_type_name }}</label>
+                                    <span @class([
+                                        'text-xs font-medium',
+                                        'text-emerald-700' => $complete,
+                                        'text-slate-500' => ! $complete,
+                                    ])>
+                                        Dipilih {{ count($picked) }} dari {{ $needed }} kamar fisik
+                                    </span>
+                                </div>
+                                <p class="mb-2 mt-0.5 text-xs text-slate-400">
+                                    Satu kamar fisik untuk satu kamar yang dipesan. Hanya kamar yang benar-benar
+                                    kosong pada tanggal menginap ini yang ditampilkan.
+                                </p>
+
+                                @php $offered = $availableRooms[$item->id] ?? collect(); @endphp
+
+                                @if ($offered->isEmpty())
                                     <p class="rounded-lg bg-amber-50 px-3 py-2 text-sm text-amber-800">
                                         Tidak ada kamar fisik yang tersedia untuk tipe ini pada rentang tanggal tersebut.
                                     </p>
                                 @else
+                                    @if ($offered->count() < $needed)
+                                        {{-- Say it now, not after the admin has filled in the whole form. --}}
+                                        <p class="mb-2 rounded-lg bg-rose-50 px-3 py-2 text-sm text-rose-800">
+                                            Hanya {{ $offered->count() }} kamar fisik yang kosong, sedangkan pemesanan ini
+                                            butuh {{ $needed }}. Selesaikan check-out tamu sebelumnya atau bebaskan kamar
+                                            dari status pemeliharaan terlebih dahulu.
+                                        </p>
+                                    @endif
                                     <div class="grid grid-cols-3 gap-2 sm:grid-cols-4">
                                         @foreach ($availableRooms[$item->id] as $room)
-                                            <label class="flex items-center gap-2 rounded-lg border border-slate-200 px-3 py-2 text-sm hover:bg-slate-50">
+                                            @php
+                                                $isPicked = in_array((string) $room->id, array_map('strval', $picked), true);
+                                                // Once enough rooms are chosen, the rest are locked so the
+                                                // count can never exceed what was booked.
+                                                $locked = ! $isPicked && $complete;
+                                            @endphp
+                                            <label wire:key="room-{{ $item->id }}-{{ $room->id }}"
+                                                   @class([
+                                                       'flex items-center gap-2 rounded-lg border px-3 py-2 text-sm transition',
+                                                       'border-brand-500 bg-brand-50 font-medium text-brand-800' => $isPicked,
+                                                       'border-slate-200 opacity-40' => $locked,
+                                                       'border-slate-200 hover:bg-slate-50 cursor-pointer' => ! $isPicked && ! $locked,
+                                                   ])>
                                                 <input type="checkbox" value="{{ $room->id }}"
-                                                       wire:model="selectedRooms.{{ $item->id }}"
-                                                       class="rounded border-slate-300 text-brand-600 focus:ring-brand-500">
+                                                       wire:model.live="selectedRooms.{{ $item->id }}"
+                                                       @disabled($locked)
+                                                       class="rounded border-slate-300 text-brand-600 focus:ring-brand-500 disabled:opacity-50">
                                                 {{ $room->room_number }}
                                             </label>
                                         @endforeach
@@ -142,6 +241,44 @@
                 <div class="mt-6 flex justify-end gap-2 border-t border-slate-100 pt-4">
                     <button wire:click="closeModals" class="btn-outline">Batal</button>
                     <button wire:click="submitCheckOut" class="btn-primary">Konfirmasi Check-out</button>
+                </div>
+            </div>
+        </div>
+    @endif
+
+    {{-- Cash received modal --}}
+    @if ($cashBooking)
+        <div class="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/50 p-4">
+            <div class="card w-full max-w-lg p-6">
+                <div class="flex items-center justify-between">
+                    <h2 class="font-display text-xl font-semibold text-slate-900">Terima Pembayaran Tunai</h2>
+                    <button wire:click="closeModals" class="text-slate-400 hover:text-slate-600">&times;</button>
+                </div>
+                <p class="mt-1 text-sm text-slate-500">{{ $cashBooking->code }} — {{ $cashBooking->customer_name }}</p>
+
+                <dl class="mt-4 space-y-1 rounded-lg bg-slate-50 px-4 py-3 text-sm">
+                    <div class="flex justify-between"><dt class="text-slate-600">Total tagihan</dt><dd class="text-slate-900">{{ rupiah($cashBooking->total_amount) }}</dd></div>
+                    <div class="flex justify-between font-medium"><dt class="text-slate-700">Sisa yang harus dibayar</dt><dd class="text-amber-700">{{ rupiah($cashOutstandingFor) }}</dd></div>
+                </dl>
+
+                <div class="mt-4 space-y-4">
+                    <div>
+                        <label class="label">Jumlah diterima (Rp)</label>
+                        <input type="number" min="1" max="{{ $cashOutstandingFor }}" wire:model="cashAmount" class="input">
+                        <p class="mt-1 text-xs text-slate-400">
+                            Boleh kurang dari total bila tamu membayar sebagian (deposit) — sisanya tetap tercatat.
+                        </p>
+                        @error('cashAmount') <p class="field-error">{{ $message }}</p> @enderror
+                    </div>
+                    <div>
+                        <label class="label">Catatan (opsional)</label>
+                        <input type="text" wire:model="cashNotes" class="input" placeholder="Diterima oleh kasir sore">
+                    </div>
+                </div>
+
+                <div class="mt-6 flex justify-end gap-2 border-t border-slate-100 pt-4">
+                    <button wire:click="closeModals" class="btn-outline">Batal</button>
+                    <button wire:click="submitCash" class="btn-primary">Catat Pembayaran</button>
                 </div>
             </div>
         </div>

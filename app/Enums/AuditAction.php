@@ -28,4 +28,45 @@ enum AuditAction: string
     case ADMIN_OVERRIDE = 'admin.override';
     case DOKU_ENVIRONMENT_SWITCHED = 'doku.environment_switched';
     case USER_MANAGED = 'user.managed';
+
+    public function label(): string
+    {
+        return match ($this) {
+            self::ADMIN_LOGIN => 'Login admin',
+            self::ROOM_CHANGE => 'Perubahan kamar',
+            self::PRICE_CHANGE => 'Perubahan harga',
+            self::INVENTORY_CHANGE => 'Perubahan inventaris',
+            self::BOOKING_CHANGE => 'Perubahan pemesanan',
+            self::BOOKING_HOLD_CREATED => 'Hold pemesanan dibuat',
+            self::BOOKING_EXPIRED => 'Pemesanan kedaluwarsa',
+            self::PAYMENT_REVIEW => 'Pembayaran ditinjau',
+            self::PAYMENT_CONFIRMED => 'Pembayaran dikonfirmasi',
+            self::PAYMENT_NOTIFICATION => 'Notifikasi pembayaran',
+            self::PAYMENT_SIGNATURE_INVALID => 'Signature pembayaran tidak sah',
+            self::CANCELLATION => 'Pembatalan',
+            self::REFUND => 'Refund',
+            self::CHECK_IN => 'Check-in',
+            self::CHECK_OUT => 'Check-out',
+            self::NO_SHOW => 'Tidak hadir',
+            self::SETTINGS_CHANGE => 'Perubahan pengaturan',
+            self::ADMIN_OVERRIDE => 'Override admin',
+            self::DOKU_ENVIRONMENT_SWITCHED => 'Mode DOKU diubah',
+            self::USER_MANAGED => 'Manajemen pengguna',
+        };
+    }
+
+    /**
+     * Actions that deserve to stand out in the log: money, access, and overrides.
+     */
+    public function isSensitive(): bool
+    {
+        return in_array($this, [
+            self::PAYMENT_SIGNATURE_INVALID,
+            self::ADMIN_OVERRIDE,
+            self::DOKU_ENVIRONMENT_SWITCHED,
+            self::USER_MANAGED,
+            self::REFUND,
+            self::SETTINGS_CHANGE,
+        ], true);
+    }
 }

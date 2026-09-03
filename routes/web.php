@@ -12,13 +12,14 @@ use App\Http\Controllers\HomeController;
 use App\Http\Controllers\PaymentController;
 use App\Http\Controllers\RoomController;
 use App\Livewire\Admin\AmenityManager;
+use App\Livewire\Admin\AuditLogViewer;
 use App\Livewire\Admin\BookingManager;
 use App\Livewire\Admin\CancellationRefundManager;
 use App\Livewire\Admin\DokuEnvironmentSwitcher;
 use App\Livewire\Admin\FaqManager;
 use App\Livewire\Admin\FrontDesk;
+use App\Livewire\Admin\GalleryManager;
 use App\Livewire\Admin\GuestList;
-use App\Livewire\Admin\InventoryCalendar;
 use App\Livewire\Admin\PageManager;
 use App\Livewire\Admin\PaymentReviewQueue;
 use App\Livewire\Admin\PromotionManager;
@@ -62,6 +63,8 @@ Route::post('/pemesanan/{booking}/batal', [BookingController::class, 'cancel'])-
 // POST, never GET: this call creates a real transaction at DOKU, and a browser
 // prefetch or link scanner must never be able to trigger it.
 Route::post('/pembayaran/{booking}', [PaymentController::class, 'start'])->name('payment.start');
+// Pay-at-hotel. POST for the same reason as above: it takes a room off sale.
+Route::post('/pembayaran/{booking}/tunai', [PaymentController::class, 'cash'])->name('payment.cash');
 Route::get('/payment/callback', [PaymentController::class, 'callback'])->name('payment.callback');
 
 // DOKU server-to-server notification. It deliberately lives OUTSIDE the /api
@@ -114,10 +117,12 @@ Route::middleware(['auth', 'staff'])
         Route::get('/tipe-kamar', RoomTypeManager::class)->name('room-types.index');
         Route::get('/kamar', RoomManager::class)->name('rooms.index');
         Route::get('/fasilitas', AmenityManager::class)->name('amenities.index');
+        Route::get('/galeri', GalleryManager::class)->name('gallery.index');
         Route::get('/konten', PageManager::class)->name('pages.index');
 
-        // Inventory & pricing (Phase 3)
-        Route::get('/inventaris', InventoryCalendar::class)->name('inventory.index');
+        // Pricing (Phase 3). The daily inventory calendar screen was removed —
+        // inventory itself is still maintained automatically by the booking
+        // services, it simply has no admin-facing editor any more.
         Route::get('/promosi', PromotionManager::class)->name('promotions.index');
 
         // Reservations & payments (Phase 4–5)
@@ -133,6 +138,9 @@ Route::middleware(['auth', 'staff'])
         Route::get('/laporan', [ReportController::class, 'index'])->name('reports.index');
         Route::get('/laporan/ekspor', [ReportController::class, 'export'])->name('reports.export');
         Route::get('/faq', FaqManager::class)->name('faqs.index');
+
+        // Audit trail (§33). Read-only — the log is evidence, not a workspace.
+        Route::get('/audit-log', AuditLogViewer::class)->name('audit.index');
 
         // Payment gateway mode. Deciding whether guests are charged real money
         // is a super-admin-only action, so it carries its own guard on top of

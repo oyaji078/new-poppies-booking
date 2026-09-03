@@ -40,6 +40,11 @@ class PaymentReviewService
                 throw new RuntimeException('Pemesanan ini tidak berada dalam status peninjauan pembayaran.');
             }
 
+            // Rooms parked as held for this very booking are already ours: settle
+            // them. Re-checking capacity here would count the booking's own hold
+            // against itself and refuse the approval on a sold-out date.
+            $stillHeld = $locked->review_inventory_held;
+
             foreach ($locked->items as $item) {
                 $roomType = $item->roomType;
                 if (! $roomType) {
@@ -48,6 +53,14 @@ class PaymentReviewService
 
                 $rows = $this->inventory->lockRows($roomType, $locked->stayPeriod());
 
+                if ($stillHeld) {
+                    $this->inventory->convertHeldToConfirmed($rows, $item->rooms);
+
+                    continue;
+                }
+
+                // Late payment after the hold lapsed — the rooms went back on
+                // sale, so they have to be available all over again.
                 if (! $this->inventory->hasCapacity($rows, $locked->stayPeriod(), $item->rooms, $roomType->sellableRoomCount())) {
                     throw new RuntimeException('Inventaris tidak mencukupi untuk mengonfirmasi pemesanan ini.');
                 }
@@ -58,6 +71,7 @@ class PaymentReviewService
             $locked->transitionTo(BookingStatus::CONFIRMED);
             $locked->payment_status = PaymentStatus::PAID;
             $locked->confirmed_at = now();
+            $locked->review_inventory_held = false;
             $locked->save();
 
             $this->audit->log(AuditAction::ADMIN_OVERRIDE->value, $locked, null, [
@@ -83,6 +97,19 @@ class PaymentReviewService
 
             if ($locked->status !== BookingStatus::PAYMENT_REVIEW) {
                 throw new RuntimeException('Pemesanan ini tidak berada dalam status peninjauan pembayaran.');
+            }
+
+            // Rejecting must put the rooms back on sale. Nothing else will:
+            // the hold sweeper ignores PAYMENT_REVIEW, so a hold left behind
+            // here blocks those dates forever.
+            if ($locked->review_inventory_held) {
+                foreach ($locked->items as $item) {
+                    if ($roomType = $item->roomType) {
+                        $rows = $this->inventory->lockRows($roomType, $locked->stayPeriod());
+                        $this->inventory->releaseHeld($rows, $item->rooms);
+                    }
+                }
+                $locked->review_inventory_held = false;
             }
 
             $locked->transitionTo(BookingStatus::CANCELLED);

@@ -118,8 +118,7 @@ class BookingInventoryService
     {
         foreach ($lockedRows as $row) {
             RoomTypeInventory::query()->whereKey($row->getKey())->update([
-                // GREATEST(...) keeps values clamped at zero even if state drifted.
-                'held_inventory' => new Expression('GREATEST(held_inventory - '.(int) $rooms.', 0)'),
+                'held_inventory' => $this->clampedSubtraction('held_inventory', $rooms),
                 'confirmed_inventory' => new Expression('confirmed_inventory + '.(int) $rooms),
                 'updated_at' => now(),
             ]);
@@ -154,15 +153,33 @@ class BookingInventoryService
         }
 
         foreach ($lockedRows as $row) {
-            $sql = $delta > 0
-                ? "{$column} + ".$delta
-                : "GREATEST({$column} - ".abs($delta).', 0)';
+            $expression = $delta > 0
+                ? new Expression("{$column} + ".$delta)
+                : $this->clampedSubtraction($column, abs($delta));
 
             RoomTypeInventory::query()->whereKey($row->getKey())->update([
-                $column => new Expression($sql),
+                $column => $expression,
                 'updated_at' => now(),
             ]);
         }
+    }
+
+    /**
+     * Subtract without ever going below zero.
+     *
+     * NOT GREATEST(col - n, 0): these columns are UNSIGNED, so MySQL evaluates
+     * the subtraction first and aborts with "BIGINT UNSIGNED value is out of
+     * range" before GREATEST can clamp anything — the drift-safety net would
+     * fail exactly when drift occurs. CASE never performs the underflowing
+     * subtraction at all, and is portable to PostgreSQL.
+     */
+    private function clampedSubtraction(string $column, int $amount): Expression
+    {
+        $amount = (int) $amount;
+
+        return new Expression(
+            "CASE WHEN {$column} >= {$amount} THEN {$column} - {$amount} ELSE 0 END"
+        );
     }
 
     /**

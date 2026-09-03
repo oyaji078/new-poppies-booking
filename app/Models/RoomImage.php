@@ -2,10 +2,10 @@
 
 namespace App\Models;
 
+use App\Services\Media\ImageStorage;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
-use Illuminate\Support\Facades\Storage;
 
 class RoomImage extends Model
 {
@@ -30,15 +30,6 @@ class RoomImage extends Model
 
     public function getUrlAttribute(): string
     {
-        $supabaseUrl = rtrim((string) config('services.supabase_storage.url', ''), '/');
-        $bucket = (string) config('services.supabase_storage.bucket', 'room-images');
-
-        if ($supabaseUrl !== '' && (string) config('services.supabase_storage.service_key', '') !== '') {
-            $encodedPath = implode('/', array_map('rawurlencode', explode('/', $this->path)));
-
-            return $supabaseUrl.'/storage/v1/object/public/'.rawurlencode($bucket).'/'.$encodedPath;
-        }
-
-        return Storage::disk('public')->url($this->path);
+        return app(ImageStorage::class)->url($this->path);
     }
 }

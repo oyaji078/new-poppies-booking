@@ -21,8 +21,8 @@ class MenuSeparationTest extends TestCase
         $this->actingAs(User::factory()->create(['role' => UserRole::ADMIN]))
             ->get('/admin')
             ->assertOk()
-            ->assertSee('Inventaris & Kalender')   // operational
-            ->assertSee('Konten Website')          // operational
+            ->assertSee('Check-in / Check-out')     // operational
+            ->assertSee('Konten Website')           // operational
             ->assertDontSee('Konfigurasi Sistem')  // super-admin section heading
             ->assertDontSee('Kelola Pengguna')
             ->assertDontSee('Mode Pembayaran DOKU');
@@ -36,7 +36,7 @@ class MenuSeparationTest extends TestCase
             ->assertSee('Konfigurasi Sistem')
             ->assertSee('Kelola Pengguna')
             ->assertSee('Mode Pembayaran DOKU')
-            ->assertDontSee('Inventaris & Kalender') // operational, hidden now
+            ->assertDontSee('Check-in / Check-out') // operational, hidden now
             ->assertDontSee('Konten Website');
     }
 }

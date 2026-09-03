@@ -23,8 +23,8 @@ class AdminPagesSmokeTest extends TestCase
             'room types' => ['/admin/tipe-kamar'],
             'rooms' => ['/admin/kamar'],
             'amenities' => ['/admin/fasilitas'],
+            'gallery' => ['/admin/galeri'],
             'pages' => ['/admin/konten'],
-            'inventory' => ['/admin/inventaris'],
             'promotions' => ['/admin/promosi'],
             'bookings' => ['/admin/reservasi'],
             'payment review' => ['/admin/peninjauan-pembayaran'],
@@ -33,6 +33,7 @@ class AdminPagesSmokeTest extends TestCase
             'guests' => ['/admin/tamu'],
             'reports' => ['/admin/laporan'],
             'faqs' => ['/admin/faq'],
+            'audit log' => ['/admin/audit-log'],
         ];
     }
 

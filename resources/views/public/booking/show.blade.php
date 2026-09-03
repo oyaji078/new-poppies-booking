@@ -34,14 +34,28 @@
                                         : 'habis'"></span>
                             </p>
                         </div>
-                        @if (Route::has('payment.start'))
-                            <form method="POST" action="{{ route('payment.start', $booking->code) }}">
-                                @csrf
-                                <button type="submit" class="btn-primary" data-loading-text="Menyiapkan pembayaran…">Bayar Sekarang</button>
-                            </form>
-                        @endif
+                        <div class="flex flex-wrap gap-2">
+                            @if (Route::has('payment.start'))
+                                <form method="POST" action="{{ route('payment.start', $booking->code) }}">
+                                    @csrf
+                                    <button type="submit" class="btn-primary" data-loading-text="Menyiapkan pembayaran…">Bayar Online</button>
+                                </form>
+                            @endif
+                            @if ($cashEnabled)
+                                <form method="POST" action="{{ route('payment.cash', $booking->code) }}"
+                                      onsubmit="return confirm('Konfirmasi pemesanan dan bayar tunai saat tiba di hotel?')">
+                                    @csrf
+                                    <button type="submit" class="btn-outline">Bayar di Tempat (Tunai)</button>
+                                </form>
+                            @endif
+                        </div>
                     </div>
-                    <p class="mt-2 text-xs text-amber-600">Waktu di server adalah acuan resmi.</p>
+                    <p class="mt-2 text-xs text-amber-600">
+                        Waktu di server adalah acuan resmi.
+                        @if ($cashEnabled)
+                            Memilih <strong>bayar di tempat</strong> langsung mengunci kamar Anda — pembayaran dilakukan di resepsionis saat check-in.
+                        @endif
+                    </p>
                 </div>
             @elseif ($booking->status->value === 'expired')
                 <div class="mt-5 rounded-xl border border-rose-200 bg-rose-50 px-5 py-4 text-sm text-rose-700">
@@ -53,8 +67,26 @@
                     Pembayaran sedang diperiksa oleh tim kami. Anda akan menerima email setelah verifikasi selesai.
                 </div>
             @elseif ($booking->status->value === 'confirmed')
+                @if ($cashOutstanding > 0)
+                    {{-- Reserved but not yet paid: a pay-at-hotel booking. --}}
+                    <div class="mt-5 rounded-xl border border-sky-200 bg-sky-50 px-5 py-4 text-sm text-sky-800">
+                        <p class="font-medium">Kamar Anda sudah dikunci. Pembayaran dilakukan di tempat.</p>
+                        <p class="mt-1">
+                            Bawa kode pemesanan <span class="font-mono font-semibold">{{ $booking->code }}</span> dan
+                            siapkan <span class="font-semibold">{{ rupiah($cashOutstanding) }}</span> untuk dibayarkan
+                            di resepsionis saat check-in.
+                        </p>
+                    </div>
+                @else
+                    <div class="mt-5 rounded-xl border border-emerald-200 bg-emerald-50 px-5 py-4 text-sm text-emerald-800">
+                        Pemesanan Anda telah dikonfirmasi. Sampai jumpa di New Poppies Senggigi!
+                    </div>
+                @endif
+            @endif
+
+            @if (session('success'))
                 <div class="mt-5 rounded-xl border border-emerald-200 bg-emerald-50 px-5 py-4 text-sm text-emerald-800">
-                    Pemesanan Anda telah dikonfirmasi. Sampai jumpa di New Poppies Senggigi!
+                    {{ session('success') }}
                 </div>
             @endif
 

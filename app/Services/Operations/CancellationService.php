@@ -144,24 +144,29 @@ class CancellationService
                 throw new RuntimeException($recheck['reason']);
             }
 
-            $wasHolding = in_array($locked->status, [BookingStatus::HELD, BookingStatus::PENDING_PAYMENT], true);
-            $wasConfirmed = in_array($locked->status, [BookingStatus::CONFIRMED, BookingStatus::PAYMENT_REVIEW], true);
+            // Which counter the rooms sit in decides which one to give back.
+            // A PAYMENT_REVIEW booking may still be holding its rooms (amount
+            // mismatch) or hold nothing at all (late payment, already sold out).
+            $releasesHeld = in_array($locked->status, [BookingStatus::HELD, BookingStatus::PENDING_PAYMENT], true)
+                || ($locked->status === BookingStatus::PAYMENT_REVIEW && $locked->review_inventory_held);
+            $releasesConfirmed = $locked->status === BookingStatus::CONFIRMED;
 
             // Return the rooms to the pool.
             foreach ($locked->items as $item) {
                 $roomType = $item->roomType;
-                if (! $roomType) {
+                if (! $roomType || (! $releasesHeld && ! $releasesConfirmed)) {
                     continue;
                 }
 
                 $rows = $this->inventory->lockRows($roomType, $locked->stayPeriod());
 
-                if ($wasHolding) {
+                if ($releasesHeld) {
                     $this->inventory->releaseHeld($rows, $item->rooms);
-                } elseif ($wasConfirmed && $locked->status === BookingStatus::CONFIRMED) {
+                } else {
                     $this->inventory->releaseConfirmed($rows, $item->rooms);
                 }
             }
+            $locked->review_inventory_held = false;
 
             // Compute the refund while the booking still reads as paid.
             $wasPaid = $locked->payment_status->isPaid();
