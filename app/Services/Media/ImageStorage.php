@@ -31,7 +31,8 @@ class ImageStorage
         $path = trim($directory, '/').'/'.Str::uuid()->toString().'.'.$extension;
 
         if (! $this->usesSupabase()) {
-            return $file->storeAs($directory, basename($path), self::DISK);
+            // Gunakan public disk - filenya langsung di public/uploads/...
+            return Storage::disk(self::DISK)->putFileAs($directory, $file, basename($path));
         }
 
         $response = Http::withToken($this->serviceKey())
