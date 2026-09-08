@@ -61,18 +61,26 @@
         @endif
     </section>
 
-    {{-- Facilities --}}
+    {{-- Facilities — now synced from admin settings --}}
     <section id="facilities" class="bg-white py-20">
         <div class="mx-auto max-w-6xl px-4">
             <div class="text-center">
                 <h2 class="font-display text-3xl font-semibold text-slate-900">Fasilitas</h2>
                 <p class="mx-auto mt-2 max-w-lg text-slate-600">Nikmati kelengkapan fasilitas selama menginap.</p>
             </div>
-            <div class="mt-10 grid grid-cols-2 gap-4 sm:grid-cols-4">
-                @foreach (['Wi-Fi Gratis', 'Kolam Renang', 'Restoran', 'Taman Tropis', 'Parkir Luas', 'Antar-Jemput', 'Resepsionis 24 Jam', 'Akses Pantai'] as $f)
-                    <div class="rounded-xl border border-slate-200 bg-slate-50 px-4 py-5 text-center text-sm font-medium text-slate-700">{{ $f }}</div>
-                @endforeach
-            </div>
+            @if ($facilities->isNotEmpty())
+                <div class="mt-10 grid grid-cols-2 gap-4 sm:grid-cols-4">
+                    @foreach ($facilities as $facility)
+                        <div class="rounded-xl border border-slate-200 bg-slate-50 px-4 py-5 text-center text-sm font-medium text-slate-700">
+                            {{ $facility->name }}
+                        </div>
+                    @endforeach
+                </div>
+            @else
+                <div class="mt-10 rounded-2xl border border-dashed border-slate-300 bg-white p-12 text-center text-slate-500">
+                    Admin belum menambahkan fasilitas hotel. Silakan kunjungi kembali nanti.
+                </div>
+            @endif
         </div>
     </section>
 
