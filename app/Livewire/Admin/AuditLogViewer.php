@@ -69,10 +69,16 @@ class AuditLogViewer extends Component
                 $term = '%'.$this->search.'%';
 
                 $q->where(function ($inner) use ($term) {
-                    $inner->where('entity_id', 'like', $term)
-                        ->orWhere('entity_type', 'like', $term)
-                        ->orWhere('ip_address', 'like', $term)
-                        ->orWhereHas('user', fn ($u) => $u->where('name', 'like', $term)->orWhere('email', 'like', $term));
+                    $inner->whereLike('entity_id', $term, caseSensitive: false)
+                        ->orWhereLike('entity_type', $term, caseSensitive: false)
+                        ->orWhereLike('ip_address', $term, caseSensitive: false)
+                        // The closure needs its own group: Laravel does not wrap
+                        // whereHas constraints, so a bare orWhere here escapes
+                        // the correlation to users and matches every log row.
+                        ->orWhereHas('user', fn ($u) => $u->where(
+                            fn ($name) => $name->whereLike('name', $term, caseSensitive: false)
+                                ->orWhereLike('email', $term, caseSensitive: false)
+                        ));
                 });
             })
             ->latest('id')

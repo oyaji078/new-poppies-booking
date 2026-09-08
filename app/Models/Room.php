@@ -6,6 +6,7 @@ use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Relations\HasMany;
 
 class Room extends Model
 {
@@ -27,6 +28,16 @@ class Room extends Model
     public function roomType(): BelongsTo
     {
         return $this->belongsTo(RoomType::class);
+    }
+
+    /**
+     * Stays this physical room has been given to. The rows are protected by a
+     * restricting foreign key, so this is also what decides whether the room
+     * may still be deleted.
+     */
+    public function assignments(): HasMany
+    {
+        return $this->hasMany(RoomAssignment::class);
     }
 
     public function scopeSellable(Builder $query): Builder

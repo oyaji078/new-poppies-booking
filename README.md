@@ -16,7 +16,7 @@ pembayaran online melalui **DOKU Checkout**.
 - Pencarian ketersediaan berdasarkan tanggal dan jumlah tamu
 - Checkout 5 langkah dengan total harga dihitung di server
 - Booking hold 30 menit + hitung mundur pembayaran
-- Pembayaran online via DOKU **atau** bayar di tempat (tunai saat check-in)
+- Pembayaran online via DOKU
 - Cek status pemesanan (kode pemesanan **+** email)
 - Pembatalan mandiri sesuai kebijakan
 - Chatbot FAQ
@@ -30,7 +30,6 @@ pembayaran online melalui **DOKU Checkout**.
 - Front desk satu papan: check-in + penugasan kamar fisik, check-out, no-show.
   Warna kartu mengikuti status — putih (belum check-in), hijau (sudah check-in),
   biru (sudah check-out), merah (tidak hadir).
-- Pencatatan pembayaran tunai di front desk (penuh atau sebagian)
 - Pembatalan & pencatatan refund
 - Laporan (8 jenis) + ekspor CSV + tampilan cetak
 - Manajemen FAQ chatbot + antrean pertanyaan belum terjawab
@@ -70,6 +69,9 @@ php artisan migrate
 php artisan db:seed
 
 # 5. Penyimpanan file & aset
+# storage:link mempercepat penyajian foto (web server melayani langsung).
+# Bila host tidak mengizinkan symlink, foto tetap tampil: route /storage/{path}
+# menyajikannya lewat Laravel.
 php artisan storage:link
 npm run build
 ```
@@ -104,7 +106,7 @@ DOKU_ENVIRONMENT=sandbox
 DOKU_CLIENT_ID=BRN-xxxx-xxxxxxxxxxxxx
 DOKU_SECRET_KEY=SK-xxxxxxxxxxxxxxxx
 DOKU_BASE_URL=https://api-sandbox.doku.com     # produksi: https://api.doku.com
-DOKU_NOTIFICATION_URL="${APP_URL}/api/payments/doku/notifications"
+DOKU_NOTIFICATION_URL="${APP_URL}/webhook/doku/notifications"
 DOKU_CALLBACK_URL="${APP_URL}/payment/callback"
 DOKU_PAYMENT_DUE_MINUTES=30
 ```
@@ -112,28 +114,17 @@ DOKU_PAYMENT_DUE_MINUTES=30
 Di dashboard DOKU, set **Notification URL** ke:
 
 ```
-https://domain-anda.com/api/payments/doku/notifications
+https://domain-anda.com/webhook/doku/notifications
 ```
 
 Endpoint ini dikecualikan dari CSRF (server-to-server) dan diamankan dengan
-**verifikasi signature DOKU**, bukan token sesi.
+**verifikasi signature DOKU**, bukan token sesi. Path-nya bukan `/api/...`
+dengan sengaja: pada host serverless (Vercel) prefiks `/api` dipesan platform
+dan tidak pernah sampai ke router Laravel. Path ini juga ikut ditandatangani,
+jadi URL yang berbeda membuat **semua** notifikasi gagal verifikasi.
 
 Untuk uji coba lokal, notifikasi memerlukan URL publik (mis. tunnel seperti ngrok),
 karena DOKU harus dapat menjangkau server Anda.
-
-### Bayar di tempat (tanpa gateway)
-
-DOKU tidak dapat dipakai di `localhost`: kredensial sandbox wajib diisi **dan**
-notifikasi server-to-server hanya sampai bila aplikasi punya URL publik. Untuk
-pengembangan/demo lokal tersedia jalur **bayar di tempat**:
-
-1. Tamu memilih **Bayar di Tempat (Tunai)** di halaman pemesanan.
-   Kamar langsung dikunci (`CONFIRMED`), pembayaran tetap `UNPAID`.
-2. Saat tamu tiba, admin menekan **Terima Tunai** di Front Desk. Boleh dibayar
-   sebagian (deposit) — sisanya tetap tercatat sampai lunas.
-
-Jalur ini dapat dimatikan di Admin → Pengaturan (`cash_payment_enabled`) bila
-produksi hanya menerima pembayaran online.
 
 ### Dua mode: Sandbox & Produksi
 
@@ -211,7 +202,7 @@ agar perilaku penguncian baris InnoDB benar-benar teruji.
    php artisan config:cache
    php artisan route:cache
    php artisan view:cache
-   php artisan storage:link
+   php artisan storage:link   # opsional — lihat catatan di bagian instalasi
    ```
 4. **Scheduler (cron)** — wajib, satu baris:
    ```cron

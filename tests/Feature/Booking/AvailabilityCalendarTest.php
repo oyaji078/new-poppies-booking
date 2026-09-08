@@ -133,6 +133,31 @@ class AvailabilityCalendarTest extends TestCase
             ->assertSet('checkIn', '');
     }
 
+    public function test_a_zero_room_party_cannot_unlock_a_sold_out_night(): void
+    {
+        // The number input's min/max is browser-side only. Every "is this night
+        // bookable" test compares free rooms against $rooms, so an unclamped
+        // zero would paint a sold-out night as available.
+        $this->book($this->day(2), confirmed: 2); // sold out
+
+        Livewire::test(AvailabilityCalendar::class, ['roomType' => $this->roomType])
+            ->set('rooms', 0)
+            ->assertSet('rooms', 1)
+            ->call('selectDate', $this->day(2))
+            ->assertSet('checkIn', '');
+    }
+
+    public function test_the_party_size_is_clamped_to_the_allowed_range(): void
+    {
+        Livewire::test(AvailabilityCalendar::class, ['roomType' => $this->roomType])
+            ->set('rooms', 999)
+            ->set('adults', -4)
+            ->set('children', -1)
+            ->assertSet('rooms', 10)
+            ->assertSet('adults', 1)
+            ->assertSet('children', 0);
+    }
+
     public function test_clicking_an_earlier_date_restarts_the_selection(): void
     {
         Livewire::test(AvailabilityCalendar::class, ['roomType' => $this->roomType])

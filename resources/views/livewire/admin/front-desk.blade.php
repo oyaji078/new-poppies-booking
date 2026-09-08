@@ -71,16 +71,8 @@
                             @if ($booking->special_request)
                                 <p class="mt-2 rounded bg-amber-50 px-2 py-1 text-xs text-amber-800">Permintaan: {{ $booking->special_request }}</p>
                             @endif
-                            @if (($outstanding[$booking->id] ?? 0) > 0)
-                                <p class="mt-2 inline-flex rounded bg-amber-100 px-2 py-1 text-xs font-medium text-amber-800">
-                                    Belum lunas: {{ rupiah($outstanding[$booking->id]) }}
-                                </p>
-                            @endif
                         </div>
                         <div class="flex flex-wrap gap-2">
-                            @if (($outstanding[$booking->id] ?? 0) > 0 && in_array($booking->status, [\App\Enums\BookingStatus::CONFIRMED, \App\Enums\BookingStatus::CHECKED_IN], true))
-                                <button wire:click="openCash({{ $booking->id }})" class="btn-outline text-sm">Terima Tunai</button>
-                            @endif
                             @if ($booking->status === \App\Enums\BookingStatus::CONFIRMED)
                                 <button wire:click="openNoShow({{ $booking->id }})" class="btn-outline text-sm text-rose-600">Tidak Hadir</button>
                                 <button wire:click="openCheckIn({{ $booking->id }})" class="btn-primary text-sm">Check-in</button>
@@ -241,44 +233,6 @@
                 <div class="mt-6 flex justify-end gap-2 border-t border-slate-100 pt-4">
                     <button wire:click="closeModals" class="btn-outline">Batal</button>
                     <button wire:click="submitCheckOut" class="btn-primary">Konfirmasi Check-out</button>
-                </div>
-            </div>
-        </div>
-    @endif
-
-    {{-- Cash received modal --}}
-    @if ($cashBooking)
-        <div class="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/50 p-4">
-            <div class="card w-full max-w-lg p-6">
-                <div class="flex items-center justify-between">
-                    <h2 class="font-display text-xl font-semibold text-slate-900">Terima Pembayaran Tunai</h2>
-                    <button wire:click="closeModals" class="text-slate-400 hover:text-slate-600">&times;</button>
-                </div>
-                <p class="mt-1 text-sm text-slate-500">{{ $cashBooking->code }} — {{ $cashBooking->customer_name }}</p>
-
-                <dl class="mt-4 space-y-1 rounded-lg bg-slate-50 px-4 py-3 text-sm">
-                    <div class="flex justify-between"><dt class="text-slate-600">Total tagihan</dt><dd class="text-slate-900">{{ rupiah($cashBooking->total_amount) }}</dd></div>
-                    <div class="flex justify-between font-medium"><dt class="text-slate-700">Sisa yang harus dibayar</dt><dd class="text-amber-700">{{ rupiah($cashOutstandingFor) }}</dd></div>
-                </dl>
-
-                <div class="mt-4 space-y-4">
-                    <div>
-                        <label class="label">Jumlah diterima (Rp)</label>
-                        <input type="number" min="1" max="{{ $cashOutstandingFor }}" wire:model="cashAmount" class="input">
-                        <p class="mt-1 text-xs text-slate-400">
-                            Boleh kurang dari total bila tamu membayar sebagian (deposit) — sisanya tetap tercatat.
-                        </p>
-                        @error('cashAmount') <p class="field-error">{{ $message }}</p> @enderror
-                    </div>
-                    <div>
-                        <label class="label">Catatan (opsional)</label>
-                        <input type="text" wire:model="cashNotes" class="input" placeholder="Diterima oleh kasir sore">
-                    </div>
-                </div>
-
-                <div class="mt-6 flex justify-end gap-2 border-t border-slate-100 pt-4">
-                    <button wire:click="closeModals" class="btn-outline">Batal</button>
-                    <button wire:click="submitCash" class="btn-primary">Catat Pembayaran</button>
                 </div>
             </div>
         </div>

@@ -4,7 +4,6 @@ namespace App\Http\Controllers;
 
 use App\Models\Booking;
 use App\Services\Operations\CancellationService;
-use App\Services\Payments\CashPaymentService;
 use App\Services\Settings\SettingService;
 use Illuminate\Http\Request;
 use Illuminate\Validation\ValidationException;
@@ -56,13 +55,7 @@ class BookingController extends Controller
 
         $booking->load(['items.nights', 'items.roomType', 'guests', 'paymentAttempts']);
 
-        $cash = app(CashPaymentService::class);
-
-        return view('public.booking.show', [
-            'booking' => $booking,
-            'cashEnabled' => $cash->isEnabled(),
-            'cashOutstanding' => $cash->outstanding($booking),
-        ]);
+        return view('public.booking.show', ['booking' => $booking]);
     }
 
     /**

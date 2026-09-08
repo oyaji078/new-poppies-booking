@@ -14,6 +14,7 @@ use Livewire\Attributes\Validate;
 use Livewire\Component;
 use Livewire\WithFileUploads;
 use Livewire\WithPagination;
+use RuntimeException;
 
 class RoomTypeManager extends Component
 {
@@ -148,13 +149,35 @@ class RoomTypeManager extends Component
 
     public function deleteImage(int $imageId, RoomImageService $service): void
     {
-        $service->delete(RoomImage::findOrFail($imageId));
+        try {
+            $service->delete(RoomImage::findOrFail($imageId));
+        } catch (RuntimeException $e) {
+            // Remote storage can refuse the delete. Say so; a 500 page here
+            // reads as "the whole screen is broken".
+            session()->flash('error', $e->getMessage());
+        }
     }
 
-    public function delete(int $id): void
+    public function delete(int $id, RoomImageService $imageService): void
     {
         $roomType = RoomType::findOrFail($id);
-        // Keep referential safety: block deletion when bookings exist (added later phases).
+
+        // booking_items.room_type_id restricts deletes, deliberately: a sold
+        // type is part of the booking record. Without this check the database
+        // refuses instead and the admin gets a 500 page. Unpublishing is the
+        // operation they actually want.
+        if ($roomType->bookingItems()->exists()) {
+            session()->flash('error', "Tipe kamar \"{$roomType->name}\" sudah pernah dipesan, jadi tidak dapat dihapus. Sembunyikan dari halaman publik agar tidak dijual lagi.");
+
+            return;
+        }
+
+        // Everything else cascades at the database level, but the photo files
+        // live outside it and would be left behind as unreachable bytes.
+        foreach ($roomType->images as $image) {
+            $imageService->delete($image);
+        }
+
         $roomType->delete();
         session()->flash('success', 'Tipe kamar dihapus.');
     }

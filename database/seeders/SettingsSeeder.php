@@ -34,10 +34,6 @@ class SettingsSeeder extends Seeder
             // before check-in. Refund = paid − (paid × this%). 0 = always full
             // refund, 100 = no refund.
             ['cancellation_fee_percent', '50', 'integer', 'booking', 'Biaya Pembatalan (%)', false],
-
-            // Pay-at-hotel. Reserves the room without an online payment, so the
-            // desk collects on arrival. Turn off to force gateway payment only.
-            ['cash_payment_enabled', '1', 'boolean', 'booking', 'Aktifkan Bayar di Tempat (Tunai)', true],
         ];
 
         foreach ($settings as [$key, $value, $type, $group, $label, $isPublic]) {

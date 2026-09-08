@@ -7,7 +7,6 @@ use App\Models\Booking;
 use App\Models\BookingItem;
 use App\Services\Operations\CheckInService;
 use App\Services\Operations\CheckOutService;
-use App\Services\Payments\CashPaymentService;
 use Illuminate\Contracts\View\View;
 use Livewire\Attributes\Url;
 use Livewire\Component;
@@ -44,13 +43,6 @@ class FrontDesk extends Component
     public ?int $noShowBookingId = null;
 
     public string $noShowReason = '';
-
-    // Cash collected at the desk
-    public ?int $cashBookingId = null;
-
-    public int $cashAmount = 0;
-
-    public string $cashNotes = '';
 
     /**
      * Card colour per stage of the stay. A booking starts white ("belum
@@ -164,7 +156,6 @@ class FrontDesk extends Component
         $this->reset([
             'checkInBookingId', 'selectedRooms', 'earlyReason', 'guestName', 'idCardType', 'idCardNumber',
             'checkOutBookingId', 'extraCharges', 'checkOutNotes', 'noShowBookingId', 'noShowReason',
-            'cashBookingId', 'cashAmount', 'cashNotes',
         ]);
         $this->resetValidation();
     }
@@ -247,29 +238,6 @@ class FrontDesk extends Component
         }
     }
 
-    public function openCash(int $bookingId, CashPaymentService $cash): void
-    {
-        $this->reset(['cashAmount', 'cashNotes']);
-        $this->cashBookingId = $bookingId;
-        // Pre-fill the full outstanding balance — the common case is the guest
-        // settling the whole bill at once.
-        $this->cashAmount = $cash->outstanding(Booking::findOrFail($bookingId));
-        $this->resetValidation();
-    }
-
-    public function submitCash(CashPaymentService $cash): void
-    {
-        $booking = Booking::findOrFail($this->cashBookingId);
-
-        try {
-            $cash->recordPayment($booking, auth()->user(), $this->cashAmount, $this->cashNotes ?: null);
-            session()->flash('success', "Pembayaran tunai {$booking->code} dicatat.");
-            $this->closeModals();
-        } catch (RuntimeException $e) {
-            $this->addError('cashAmount', $e->getMessage());
-        }
-    }
-
     public function render(): View
     {
         $today = today()->toDateString();
@@ -328,21 +296,14 @@ class FrontDesk extends Component
             }
         }
 
-        $cash = app(CashPaymentService::class);
-        $cashBooking = $this->cashBookingId ? Booking::find($this->cashBookingId) : null;
-
         return view('livewire.admin.front-desk', [
             'bookings' => $bookings,
             'checkInBooking' => $checkInBooking,
             'availableRooms' => $availableRooms,
             'checkOutBooking' => $this->checkOutBookingId ? Booking::find($this->checkOutBookingId) : null,
             'noShowBooking' => $this->noShowBookingId ? Booking::find($this->noShowBookingId) : null,
-            'cashBooking' => $cashBooking,
-            'cashOutstandingFor' => $cashBooking ? $cash->outstanding($cashBooking) : 0,
             'counts' => $counts,
             'totalCount' => $counts->sum(),
-            // Outstanding balance per card, so the desk sees who still owes money.
-            'outstanding' => $bookings->mapWithKeys(fn (Booking $b) => [$b->id => $cash->outstanding($b)]),
         ])->layout('components.layouts.admin', [
             'title' => 'Check-in / Check-out',
             'heading' => 'Front Desk',

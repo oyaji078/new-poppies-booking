@@ -11,6 +11,7 @@ use App\Http\Controllers\Cron\ExpireBookingHoldsController;
 use App\Http\Controllers\HomeController;
 use App\Http\Controllers\PaymentController;
 use App\Http\Controllers\RoomController;
+use App\Http\Controllers\UploadedImageController;
 use App\Livewire\Admin\AmenityManager;
 use App\Livewire\Admin\AuditLogViewer;
 use App\Livewire\Admin\BookingManager;
@@ -42,6 +43,14 @@ Route::get('/cron/expire-booking-holds', ExpireBookingHoldsController::class)
     ->middleware('throttle:6,1')
     ->name('cron.expire-booking-holds');
 
+// Uploaded photos. Backs the same /storage URL the public disk advertises, so
+// the gallery keeps working on hosts where the public/storage symlink cannot be
+// created. Where the symlink does exist the web server answers first and this
+// route is never reached.
+Route::get('/storage/{path}', UploadedImageController::class)
+    ->where('path', '.*')
+    ->name('storage.public');
+
 Route::get('/', [HomeController::class, 'index'])->name('home');
 Route::get('/kamar', [RoomController::class, 'index'])->name('rooms.index');
 Route::get('/kamar/{roomType}', [RoomController::class, 'show'])->name('rooms.show');
@@ -63,8 +72,6 @@ Route::post('/pemesanan/{booking}/batal', [BookingController::class, 'cancel'])-
 // POST, never GET: this call creates a real transaction at DOKU, and a browser
 // prefetch or link scanner must never be able to trigger it.
 Route::post('/pembayaran/{booking}', [PaymentController::class, 'start'])->name('payment.start');
-// Pay-at-hotel. POST for the same reason as above: it takes a room off sale.
-Route::post('/pembayaran/{booking}/tunai', [PaymentController::class, 'cash'])->name('payment.cash');
 Route::get('/payment/callback', [PaymentController::class, 'callback'])->name('payment.callback');
 
 // DOKU server-to-server notification. It deliberately lives OUTSIDE the /api

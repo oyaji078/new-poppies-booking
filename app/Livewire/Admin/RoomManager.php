@@ -101,7 +101,19 @@ class RoomManager extends Component
 
     public function delete(int $id): void
     {
-        Room::findOrFail($id)->delete();
+        $room = Room::findOrFail($id);
+
+        // room_assignments.room_id restricts deletes, so a room that has ever
+        // been handed to a guest cannot go. Without this check the database
+        // raises the objection instead and the admin sees a 500 page. Taking
+        // the room out of service is the operation they actually want.
+        if ($room->assignments()->exists()) {
+            session()->flash('error', "Kamar {$room->room_number} pernah dipakai pemesanan, jadi tidak dapat dihapus. Nonaktifkan atau tandai pemeliharaan agar tidak dijual lagi.");
+
+            return;
+        }
+
+        $room->delete();
         session()->flash('success', 'Kamar dihapus.');
     }
 

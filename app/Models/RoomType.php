@@ -59,6 +59,15 @@ class RoomType extends Model
         return $this->hasMany(RoomTypeInventory::class);
     }
 
+    /**
+     * Booking lines that sold this type. Protected by a restricting foreign key,
+     * so this is also what decides whether the type may still be deleted.
+     */
+    public function bookingItems(): HasMany
+    {
+        return $this->hasMany(BookingItem::class);
+    }
+
     public function primaryImage(): HasMany
     {
         return $this->images()->where('is_primary', true);

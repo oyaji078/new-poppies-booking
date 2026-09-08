@@ -36,6 +36,15 @@ class AvailabilityCalendar extends Component
 
     public int $children = 0;
 
+    /**
+     * Availability for one grid, keyed by its first date. Private, so Livewire
+     * never persists it — it only spares the repeated identical query inside a
+     * single request, where render() and latestCheckOut() both want the answer.
+     *
+     * @var array<string, array<string, int>>
+     */
+    private array $availabilityCache = [];
+
     public function mount(RoomType $roomType): void
     {
         $this->roomType = $roomType;
@@ -68,8 +77,38 @@ class AvailabilityCalendar extends Component
         $this->reset(['checkIn', 'checkOut']);
     }
 
+    public function updatedRooms(): void
+    {
+        $this->normalizeParty();
+    }
+
+    public function updatedAdults(): void
+    {
+        $this->normalizeParty();
+    }
+
+    public function updatedChildren(): void
+    {
+        $this->normalizeParty();
+    }
+
+    /**
+     * The party size arrives from number inputs, whose min/max the browser is
+     * free to ignore. It matters here beyond tidiness: every "is this date
+     * bookable" test compares free rooms against $rooms, so a zero or negative
+     * value would paint fully booked nights as available.
+     */
+    private function normalizeParty(): void
+    {
+        $this->rooms = min(10, max(1, $this->rooms));
+        $this->adults = min(20, max(1, $this->adults));
+        $this->children = min(20, max(0, $this->children));
+    }
+
     public function selectDate(string $date): void
     {
+        $this->normalizeParty();
+
         $availability = $this->availability();
 
         if (! isset($availability[$date]) || CarbonImmutable::parse($date)->lt(CarbonImmutable::today())) {
@@ -108,10 +147,11 @@ class AvailabilityCalendar extends Component
     public function availability(): array
     {
         $start = $this->gridStart();
+        $key = $start->toDateString();
 
-        return app(AvailabilityService::class)->dailyAvailability(
+        return $this->availabilityCache[$key] ??= app(AvailabilityService::class)->dailyAvailability(
             $this->roomType,
-            $start->toDateString(),
+            $key,
             // 6 grid weeks + room for a stay continuing into the next month.
             $start->addDays(41 + $this->maxNights())->toDateString(),
         );
@@ -170,6 +210,8 @@ class AvailabilityCalendar extends Component
 
     public function render(): View
     {
+        $this->normalizeParty();
+
         $availability = $this->availability();
         $today = CarbonImmutable::today();
         $monthStart = CarbonImmutable::parse($this->month)->startOfMonth();

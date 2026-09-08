@@ -46,9 +46,14 @@ class RoomImageService
     {
         $wasPrimary = $image->is_primary;
         $roomType = $image->roomType;
+        $path = $image->path;
 
-        $this->storage->delete($image->path);
+        // Row first, file second — the same order GalleryService uses, and for
+        // the same reason. A stored file with no row is invisible clutter, but a
+        // row whose file is already gone is a broken image the admin can never
+        // clear, because every retry fails on the same missing object.
         $image->delete();
+        $this->storage->delete($path);
 
         // Promote another image to primary so a type is never left without one.
         if ($wasPrimary && $roomType) {

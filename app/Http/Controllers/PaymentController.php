@@ -6,9 +6,7 @@ use App\Exceptions\BookingException;
 use App\Models\Booking;
 use App\Services\Doku\DokuCheckoutService;
 use App\Services\Doku\PaymentCallbackToken;
-use App\Services\Payments\CashPaymentService;
 use Illuminate\Http\JsonResponse;
-use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\View\View;
 use RuntimeException;
@@ -34,28 +32,6 @@ class PaymentController extends Controller
         }
 
         return redirect()->away($attempt->payment_url);
-    }
-
-    /**
-     * "Bayar di tempat": reserve the room now, hand over cash at the front desk.
-     *
-     * POST only, and behind the same access check as the gateway flow — this
-     * takes a room off sale, so a link scanner must never be able to fire it.
-     */
-    public function cash(Request $request, Booking $booking, CashPaymentService $cash): RedirectResponse
-    {
-        $this->authorizeBookingAccess($request, $booking);
-
-        try {
-            $cash->reserve($booking);
-        } catch (RuntimeException $e) {
-            return redirect()->route('booking.show', $booking->code)->with('error', $e->getMessage());
-        }
-
-        return redirect()->route('booking.show', $booking->code)->with(
-            'success',
-            'Pemesanan dikonfirmasi. Silakan lakukan pembayaran tunai saat tiba di hotel.'
-        );
     }
 
     /**

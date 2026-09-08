@@ -84,6 +84,36 @@ class AuditLogViewerTest extends TestCase
             ->assertDontSee('Rina Kasir');
     }
 
+    public function test_searching_by_email_does_not_drag_in_unrelated_entries(): void
+    {
+        // Laravel does not wrap whereHas constraints, so an unguarded orWhere
+        // inside one escapes the correlation to users: every log row matches as
+        // soon as ANY user's email matches the term.
+        $other = User::factory()->admin()->create([
+            'name' => 'Budi Resepsionis',
+            'email' => 'budi@newpoppies.test',
+        ]);
+        $this->entry(AuditAction::CHECK_IN->value, $this->admin);
+        $this->entry(AuditAction::CHECK_OUT->value, $other);
+
+        Livewire::actingAs($this->admin)
+            ->test(AuditLogViewer::class)
+            ->set('search', 'budi@newpoppies.test')
+            ->assertSee('Budi Resepsionis')
+            ->assertDontSee('Rina Kasir');
+    }
+
+    public function test_the_actor_search_ignores_letter_case(): void
+    {
+        $other = User::factory()->admin()->create(['name' => 'Budi Resepsionis']);
+        $this->entry(AuditAction::CHECK_OUT->value, $other);
+
+        Livewire::actingAs($this->admin)
+            ->test(AuditLogViewer::class)
+            ->set('search', 'budi')
+            ->assertSee('Budi Resepsionis');
+    }
+
     public function test_system_actions_without_an_actor_are_labelled(): void
     {
         $this->entry(AuditAction::BOOKING_EXPIRED->value, null);
