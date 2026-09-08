@@ -32,7 +32,14 @@ class GalleryManager extends Component
 
     public string $alt = '';
 
-    public function upload(GalleryService $service): void
+    /**
+     * Deliberately NOT named upload(). Livewire ships its own client-side
+     * $wire.upload(name, file, ...) helper, and a PHP action of that name is
+     * shadowed by it: wire:submit="upload" calls the JS helper with no
+     * arguments, which dies on `undefined.name` and never reaches the server.
+     * The form silently does nothing — no request, no validation, no log.
+     */
+    public function addPhotos(GalleryService $service): void
     {
         $this->validate(
             ['newImages' => ['required', 'array', 'min:1']],

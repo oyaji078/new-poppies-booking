@@ -30,7 +30,7 @@ class GalleryManagerTest extends TestCase
             ->test(GalleryManager::class)
             ->set('newImages', [UploadedFile::fake()->create('kolam renang.jpg', 120, 'image/jpeg')])
             ->set('newTitle', 'Kolam Renang')
-            ->call('upload')
+            ->call('addPhotos')
             ->assertHasNoErrors();
 
         $image = GalleryImage::sole();
@@ -47,7 +47,7 @@ class GalleryManagerTest extends TestCase
         Livewire::actingAs($this->admin)
             ->test(GalleryManager::class)
             ->set('newImages', [UploadedFile::fake()->create('script.php', 10, 'text/x-php')])
-            ->call('upload')
+            ->call('addPhotos')
             ->assertHasErrors('newImages.0');
 
         $this->assertSame(0, GalleryImage::count());
@@ -57,7 +57,7 @@ class GalleryManagerTest extends TestCase
     {
         Livewire::actingAs($this->admin)
             ->test(GalleryManager::class)
-            ->call('upload')
+            ->call('addPhotos')
             ->assertHasErrors('newImages');
     }
 
@@ -110,7 +110,7 @@ class GalleryManagerTest extends TestCase
         Livewire::actingAs($this->admin)
             ->test(GalleryManager::class)
             ->set('newImages', [UploadedFile::fake()->create('a.jpg', 120, 'image/jpeg')])
-            ->call('upload');
+            ->call('addPhotos');
 
         $image = GalleryImage::sole();
         Storage::disk('public')->assertExists($image->path);

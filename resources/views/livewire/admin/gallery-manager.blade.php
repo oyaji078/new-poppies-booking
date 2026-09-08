@@ -7,7 +7,7 @@
             (landscape) agar tampil rapi di halaman publik.
         </p>
 
-        <form wire:submit="upload" class="mt-5 grid gap-4 sm:grid-cols-3">
+        <form wire:submit="addPhotos" class="mt-5 grid gap-4 sm:grid-cols-3">
             <div class="sm:col-span-2">
                 <label class="label">Pilih foto (bisa lebih dari satu)</label>
                 <input type="file" wire:model="newImages" multiple accept="image/jpeg,image/png,image/webp"
@@ -21,7 +21,7 @@
                 <input type="text" wire:model="newTitle" class="input" placeholder="Kolam renang">
             </div>
             <div class="sm:col-span-3">
-                <button type="submit" class="btn-primary" wire:loading.attr="disabled" wire:target="upload,newImages">
+                <button type="submit" class="btn-primary" wire:loading.attr="disabled" wire:target="addPhotos,newImages">
                     Unggah ke Galeri
                 </button>
             </div>
