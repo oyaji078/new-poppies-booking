@@ -16,7 +16,7 @@ pembayaran online melalui **DOKU Checkout**.
 - Pencarian ketersediaan berdasarkan tanggal dan jumlah tamu
 - Checkout 5 langkah dengan total harga dihitung di server
 - Booking hold 30 menit + hitung mundur pembayaran
-- Pembayaran online via DOKU
+- Pembayaran online via DOKU **atau** bayar di tempat (tunai saat check-in)
 - Cek status pemesanan (kode pemesanan **+** email)
 - Pembatalan mandiri sesuai kebijakan
 - Chatbot FAQ
@@ -27,6 +27,7 @@ pembayaran online melalui **DOKU Checkout**.
 - Galeri halaman publik (unggah, keterangan, urutan, tampil/sembunyi)
 - Promosi (persentase & nominal, otomatis & berkode)
 - Reservasi, peninjauan pembayaran
+- Pencatatan pembayaran tunai di front desk (penuh atau sebagian)
 - Front desk satu papan: check-in + penugasan kamar fisik, check-out, no-show.
   Warna kartu mengikuti status — putih (belum check-in), hijau (sudah check-in),
   biru (sudah check-out), merah (tidak hadir).
@@ -125,6 +126,24 @@ jadi URL yang berbeda membuat **semua** notifikasi gagal verifikasi.
 
 Untuk uji coba lokal, notifikasi memerlukan URL publik (mis. tunnel seperti ngrok),
 karena DOKU harus dapat menjangkau server Anda.
+
+### Bayar di tempat (tanpa gateway)
+
+Selain DOKU, tamu dapat memilih **bayar di tempat**:
+
+1. Tamu menekan **Bayar di Tempat (Tunai)** di halaman pemesanan.
+   Kamar langsung dikunci (`CONFIRMED`), pembayaran tetap `UNPAID`.
+2. Saat tamu tiba, admin menekan **Terima Tunai** di Front Desk. Boleh dibayar
+   sebagian (deposit) — sisanya tetap tercatat sampai lunas.
+
+Jalur ini dinyalakan/dimatikan oleh **Super Admin** di **Admin → Pengaturan →
+Metode Pembayaran** (`cash_payment_enabled`). Mematikannya hanya menghentikan
+tamu memilihnya; pemesanan tunai yang sudah berjalan tetap dapat ditagih di
+Front Desk.
+
+Ini juga jalur yang dipakai untuk demo lokal: DOKU tidak dapat dipakai di
+`localhost`, karena notifikasi server-to-server hanya sampai bila aplikasi punya
+URL publik.
 
 ### Dua mode: Sandbox & Produksi
 

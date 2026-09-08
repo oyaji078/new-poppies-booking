@@ -40,14 +40,26 @@ class GalleryManager extends Component
         );
         $this->validate();
 
+        $stored = 0;
+
         foreach ($this->newImages as $file) {
-            $service->store($file, $this->newTitle ?: null);
+            try {
+                $service->store($file, $this->newTitle ?: null);
+                $stored++;
+            } catch (RuntimeException $e) {
+                // A storage failure must name itself. Left uncaught it is a raw
+                // 500, which on a host with display_errors on leaks paths and
+                // tells the admin nothing about what to do next.
+                session()->flash('error', 'Foto gagal disimpan: '.$e->getMessage());
+                break;
+            }
         }
 
-        $count = count($this->newImages);
         $this->reset(['newImages', 'newTitle']);
 
-        session()->flash('success', "{$count} foto ditambahkan ke galeri.");
+        if ($stored > 0) {
+            session()->flash('success', "{$stored} foto ditambahkan ke galeri.");
+        }
     }
 
     public function startEdit(int $id): void

@@ -41,6 +41,13 @@ class DashboardController extends Controller
                 ->where('payment_status', PaymentStatus::REFUND_PENDING->value)
                 ->count(),
 
+            // Rooms reserved but not yet paid for — pay-at-hotel bookings the
+            // front desk still has to collect on.
+            'awaiting_cash' => Booking::query()
+                ->whereIn('status', [BookingStatus::CONFIRMED->value, BookingStatus::CHECKED_IN->value])
+                ->whereIn('payment_status', [PaymentStatus::UNPAID->value, PaymentStatus::PENDING->value])
+                ->count(),
+
             'maintenance_rooms' => Room::query()->where('under_maintenance', true)->count(),
         ];
 

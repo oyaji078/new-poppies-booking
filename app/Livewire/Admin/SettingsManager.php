@@ -45,6 +45,13 @@ class SettingsManager extends Component
 
     public int $cancellation_fee_percent = 50;
 
+    /**
+     * Whether guests may reserve without paying online and settle cash at the
+     * desk. It decides whether a room can be taken off sale on a promise, so it
+     * belongs on this screen with the rest of the money handling — not in code.
+     */
+    public bool $cash_payment_enabled = true;
+
     public function mount(SettingService $settings): void
     {
         $this->authorizeSuperAdmin();
@@ -63,6 +70,7 @@ class SettingsManager extends Component
         $this->booking_max_nights = $settings->integer('booking_max_nights', 30);
         $this->free_cancellation_hours = $settings->integer('free_cancellation_hours', 24);
         $this->cancellation_fee_percent = $settings->integer('cancellation_fee_percent', 50);
+        $this->cash_payment_enabled = $settings->boolean('cash_payment_enabled', true);
     }
 
     private function authorizeSuperAdmin(): void
@@ -87,6 +95,7 @@ class SettingsManager extends Component
             'booking_max_nights' => ['required', 'integer', 'min:1', 'max:365'],
             'free_cancellation_hours' => ['required', 'integer', 'min:0', 'max:720'],
             'cancellation_fee_percent' => ['required', 'integer', 'min:0', 'max:100'],
+            'cash_payment_enabled' => ['boolean'],
         ], [], [
             'hotel_name' => 'nama hotel',
             'check_in_time' => 'jam check-in',
@@ -114,6 +123,9 @@ class SettingsManager extends Component
             ['booking_max_nights', $this->booking_max_nights, 'integer', 'booking', 'Maksimal Malam', false],
             ['free_cancellation_hours', $this->free_cancellation_hours, 'integer', 'booking', 'Batas Pembatalan Gratis (jam)', false],
             ['cancellation_fee_percent', $this->cancellation_fee_percent, 'integer', 'booking', 'Biaya Pembatalan (%)', false],
+            // Public: the booking page reads it to decide whether to offer the
+            // pay-at-hotel button at all.
+            ['cash_payment_enabled', $this->cash_payment_enabled, 'boolean', 'booking', 'Aktifkan Bayar di Tempat (Tunai)', true],
         ];
 
         foreach ($map as [$key, $value, $type, $group, $label, $public]) {

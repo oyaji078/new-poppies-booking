@@ -72,6 +72,9 @@ Route::post('/pemesanan/{booking}/batal', [BookingController::class, 'cancel'])-
 // POST, never GET: this call creates a real transaction at DOKU, and a browser
 // prefetch or link scanner must never be able to trigger it.
 Route::post('/pembayaran/{booking}', [PaymentController::class, 'start'])->name('payment.start');
+// Pay-at-hotel. POST for the same reason as above: it takes a room off sale.
+// Whether guests may choose it at all is a super-admin setting.
+Route::post('/pembayaran/{booking}/tunai', [PaymentController::class, 'cash'])->name('payment.cash');
 Route::get('/payment/callback', [PaymentController::class, 'callback'])->name('payment.callback');
 
 // DOKU server-to-server notification. It deliberately lives OUTSIDE the /api

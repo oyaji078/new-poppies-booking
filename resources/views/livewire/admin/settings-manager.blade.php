@@ -93,6 +93,34 @@
         </div>
     </div>
 
+    {{-- Payment methods --}}
+    <div class="card p-5">
+        <h3 class="font-semibold text-slate-900">Metode Pembayaran</h3>
+        <p class="mt-1 text-sm text-slate-500">
+            Pembayaran online via DOKU selalu aktif. Mode sandbox/produksinya diatur
+            terpisah di <a href="{{ route('admin.doku.environment') }}" class="font-medium text-brand-700 hover:underline">Mode Pembayaran DOKU</a>.
+        </p>
+
+        <label class="mt-4 flex cursor-pointer items-start gap-3 rounded-lg border border-slate-200 p-4 hover:bg-slate-50">
+            <input type="checkbox" wire:model="cash_payment_enabled"
+                   class="mt-0.5 h-4 w-4 rounded border-slate-300 text-brand-600 focus:ring-brand-500">
+            <span>
+                <span class="block text-sm font-medium text-slate-800">Bayar di Tempat (Tunai)</span>
+                <span class="mt-0.5 block text-xs text-slate-500">
+                    Tamu dapat mengunci kamar tanpa membayar online, lalu melunasi di
+                    resepsionis saat check-in. Kamar langsung berkurang dari stok meski
+                    uang belum diterima — matikan bila hotel hanya menerima pembayaran online.
+                </span>
+                @error('cash_payment_enabled') <span class="mt-1 block text-sm text-rose-600">{{ $message }}</span> @enderror
+            </span>
+        </label>
+
+        <p class="mt-3 text-xs text-slate-400">
+            Mematikan opsi ini hanya menghentikan tamu memilihnya. Pemesanan tunai yang
+            sudah berjalan tetap dapat ditagih di Front Desk.
+        </p>
+    </div>
+
     <div class="flex justify-end">
         <button wire:click="save" class="btn-primary">Simpan Pengaturan</button>
     </div>
